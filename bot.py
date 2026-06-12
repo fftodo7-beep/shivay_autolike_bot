@@ -7,7 +7,7 @@ import threading
 import requests  
 from apscheduler.schedulers.background import BackgroundScheduler
 import os
-from flask import Flask # <-- 24/7 LIVE RAKHNE KE LIYE FLASK INJECT KIYA
+from flask import Flask
 
 # ==========================================
 # ⚙️ 1. CORE CONFIGURATION
@@ -39,7 +39,7 @@ API_POOL = {
 }
 
 # ==========================================
-# 🌐 2. FLASK SERVER FOR RENDER HEALTH CHECK
+# 🌐 2. FLASK SERVER FOR 24/7 UPTIME
 # ==========================================
 app = Flask(__name__)
 
@@ -48,7 +48,6 @@ def home():
     return "⚡ SHIVAY MATRIX CORE IS RUNNING 24/7 ⚡"
 
 def run_flask():
-    # Render automatically passes the PORT variable, free standard port fallback is 8080
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
 
@@ -116,13 +115,13 @@ def check_limit_and_uid(user_id, target_uid):
 
     if role == 'normal':
         if reg_uid and str(reg_uid) != str(target_uid):
-            return False, f"❌ *Fatal Match Error:*\nYou can only boost 1 UID locked on this node.\n🔒 Locked Node: `{reg_uid}`"
+            return False, f"⚠️ ERROR: You can only boost 1 UID. Your registered UID is `{reg_uid}`."
         if not reg_uid:
             supabase.table('users').update({'registered_uid': target_uid}).eq('user_id', int(user_id)).execute()
 
     max_limit = 5 if role == 'admin' else 1
     if likes_used >= max_limit:
-        return False, f"⚠️ *Limit Restrained:*\nYou have exhausted your structural allocation of `{max_limit}` targets for today."
+        return False, f"⚠️ LIMIT REACHED: You have used your {max_limit} likes for today."
         
     return True, "Success"
 
@@ -174,19 +173,16 @@ def hit_real_api(uid, region):
 
 def send_success_report(chat_id, uid, region, api_data, user_name):
     caption = (
-        f"╔════════════════════════════╗\n"
-        f"   ⚡ AUTOMATION RECON LOG ⚡\n"
-        f"╚════════════════════════════╝\n\n"
-        f"👤 *OPERATOR:* {user_name}\n"
-        f"🆔 *TARGET UID:* `{uid}`\n"
-        f"🌍 *REGION:* `{region}`\n\n"
-        f"📊 *METRICS TIMELINE:* \n"
-        f" ┣ 📈 Initial Counter: `{api_data['before']}`\n"
-        f" ┣ ➕ Injected Load: `+{api_data['added']}`\n"
-        f" ┗ 🎯 Synchronized: `{int(api_data['before']) + int(api_data['added'])}`\n\n"
-        f"⏳ *DURATION:* `{api_data.get('days', 'N/A')} Days Left`\n"
-        f"──────────────────────────────\n"
-        f"👑 *ARCHITECT:* SHIVAY | @shivay1m"
+        f"✅ **AUTOLIKES SENT SUCCESSFULLY**\n\n"
+        f"👤 **NAME:** {user_name}\n"
+        f"🆔 **UID:** `{uid}`\n"
+        f"🌍 **REGION:** {region}\n"
+        f"📊 **BEFORE:** {api_data['before']}\n"
+        f"➕ **ADD:** +{api_data['added']}\n"
+        f"📈 **AFTER:** {int(api_data['before']) + int(api_data['added'])}\n"
+        f"⏳ **DAYS LEFT:** {api_data.get('days', 'N/A')}\n"
+        f"👑 **OWNER:** SHIVAY\n"
+        f"🙏 **THANKS FOR USING**"
     )
     try:
         with open("bot.png", "rb") as photo:
@@ -195,7 +191,7 @@ def send_success_report(chat_id, uid, region, api_data, user_name):
         bot.send_message(chat_id, caption, parse_mode="Markdown")
 
 # ==========================================
-# 🎛️ 5. ROLE-BASED INTERACTIVE MENUS
+# 🎛️ 5. INTERACTIVE ROLE BUTTON PANELS
 # ==========================================
 def get_matrix_keyboard(user_id):
     markup = types.InlineKeyboardMarkup(row_width=2)
@@ -222,7 +218,7 @@ def back_to_main_keyboard():
     return markup
 
 # ==========================================
-# 👤 6. INTERACTIVE TERMINAL MAIN ENGINE
+# 👤 6. INTERACTIVE COMMAND ENGINE ROUTING
 # ==========================================
 @bot.message_handler(commands=['start', 'help'])
 def start_cmd(message):
@@ -232,25 +228,26 @@ def start_cmd(message):
     
     if not check_force_join(user_id):
         lock_txt = (
-            f"╔════════════════════════════╗\n"
-            f"║   🔒 SECURITY LOCK ACTIVE  ║\n"
-            f"╚════════════════════════════╝\n\n"
-            f"⚠️ *Access Refused:* You must be a verified subscriber of our network channel to interface with the node cluster.\n\n"
-            f"Please link using the bridge button below and restart verification."
+            f"╔══════════════════════════╗\n"
+            f"🤖 🔒 SECURITY LOCK ACTIVE 🤖\n"
+            f"╚══════════════════════════╝\n\n"
+            f"⚠️ You must join our required channel first to unlock the server commands!\n\n"
+            f"Please click join button below and check verification again."
         )
         return bot.reply_to(message, lock_txt, parse_mode="Markdown", reply_markup=get_join_keyboard())
 
     welcome_text = (
-        f"╔════════════════════════════╗\n"
-        f"║   ⚡ SHIVAY MATRIX CORE ║\n"
-        f"╚════════════════════════════╝\n\n"
-        f"🛰️ *Mainframe:* `ONLINE`\n"
-        f"🔒 *Security Matrix:* `ACTIVE & SECURE`\n\n"
-        f"👤 *USER LOG MATRIX:* \n"
-        f" ┣ 📝 Name: `{user_name}`\n"
-        f" ┣ 🆔 ID: `{user_id}`\n"
-        f" ┗ 🌐 Tag: `{username}`\n\n"
-        f"👋 Choose an authorized menu below to pull terminal configurations."
+        f"╔══════════════════════════╗\n"
+        f"🤖 🤖 SHIVAY FREE LIKE BOT\n"
+        f"╚══════════════════════════╝\n"
+        f"👋 Welcome to Free Fire Auto Like Bot!\n\n"
+        f"🇮🇳 India Service: 🟢 ACTIVE\n"
+        f"🇧🇩 Bangladesh Service: 🟢 ACTIVE\n\n"
+        f"👤 **USER LOG MATRIX:** \n"
+        f"• Name: `{user_name}`\n"
+        f"• Telegram ID: `{user_id}`\n"
+        f"• Tag: `{username}`\n\n"
+        f"🚀 Tap the buttons below to open user, admin or owner interfaces."
     )
     
     try:
@@ -276,16 +273,15 @@ def handle_panels(call):
         user_name = call.from_user.first_name
         username = f"@{call.from_user.username}" if call.from_user.username else "No Public Tag"
         welcome_text = (
-            f"╔════════════════════════════╗\n"
-            f"║   ⚡ SHIVAY MATRIX CORE ║\n"
-            f"╚════════════════════════════╝\n\n"
-            f"🛰️ *Mainframe:* `ONLINE`\n"
-            f"🔒 *Security Matrix:* `ACTIVE & SECURE`\n\n"
-            f"👤 *USER LOG MATRIX:* \n"
-            f" ┣ 📝 Name: `{user_name}`\n"
-            f" ┣ 🆔 ID: `{user_id}`\n"
-            f" ┗ 🌐 Tag: `{username}`\n\n"
-            f"👋 Choose an interactive terminal layer button below:"
+            f"╔══════════════════════════╗\n"
+            f"🤖 🤖 SHIVAY FREE LIKE BOT\n"
+            f"╚══════════════════════════╝\n"
+            f"👋 Welcome to Free Fire Auto Like Bot!\n\n"
+            f"👤 **USER LOG MATRIX:** \n"
+            f"• Name: `{user_name}`\n"
+            f"• Telegram ID: `{user_id}`\n"
+            f"• Tag: `{username}`\n\n"
+            f"🚀 Select an interactive terminal option below:"
         )
         try: bot.edit_message_caption(welcome_text, call.message.chat.id, call.message.message_id, parse_mode="Markdown", reply_markup=get_matrix_keyboard(user_id))
         except: bot.edit_message_text(welcome_text, call.message.chat.id, call.message.message_id, parse_mode="Markdown", reply_markup=get_matrix_keyboard(user_id))
@@ -293,20 +289,18 @@ def handle_panels(call):
     elif action == "panel_user":
         markup = types.InlineKeyboardMarkup(row_width=2)
         markup.add(
-            types.InlineKeyboardButton("🇮🇳 Boost India", callback_data="op_like_ind"),
-            types.InlineKeyboardButton("🇧🇩 Boost Bangladesh", callback_data="op_like_bd")
+            types.InlineKeyboardButton("• /like IND", callback_data="op_like_ind"),
+            types.InlineKeyboardButton("• /like BD", callback_data="op_like_bd")
         )
         markup.add(
-            types.InlineKeyboardButton("📊 Telemetry Status", callback_data="op_mylike"),
-            types.InlineKeyboardButton("💎 Allocation Plan", callback_data="op_plan")
+            types.InlineKeyboardButton("• /mylike", callback_data="op_mylike"),
+            types.InlineKeyboardButton("• /plan", callback_data="op_plan")
         )
-        markup.add(types.InlineKeyboardButton("◀️ Return to Core", callback_data="panel_main"))
+        markup.add(types.InlineKeyboardButton("◀️ Back to Menu", callback_data="panel_main"))
 
         user_txt = (
-            f"╔════════════════════════════╗\n"
-            f"║    🛰️ CLIENT TERMINAL      ║\n"
-            f"╚════════════════════════════╝\n\n"
-            f"Tap any active node button below to interface directly with real automation streams. No manual typing required."
+            f"🚀 **User Command Interface:**\n\n"
+            f"Type karne ki koi zaroorat nahi hai. Niche diye buttons se direct execute karein:"
         )
         try: bot.edit_message_caption(user_txt, call.message.chat.id, call.message.message_id, parse_mode="Markdown", reply_markup=markup)
         except: bot.edit_message_text(user_txt, call.message.chat.id, call.message.message_id, parse_mode="Markdown", reply_markup=markup)
@@ -317,24 +311,22 @@ def handle_panels(call):
         
         markup = types.InlineKeyboardMarkup(row_width=2)
         markup.add(
-            types.InlineKeyboardButton("➕ Add IND Queue", callback_data="op_auto_ind"),
-            types.InlineKeyboardButton("➕ Add BD Queue", callback_data="op_auto_bd")
+            types.InlineKeyboardButton("• /autolike IND", callback_data="op_auto_ind"),
+            types.InlineKeyboardButton("• /autolike BD", callback_data="op_auto_bd")
         )
         markup.add(
-            types.InlineKeyboardButton("📋 View IND Pipeline", callback_data="op_list_ind"),
-            types.InlineKeyboardButton("📋 View BD Pipeline", callback_data="op_list_bd")
+            types.InlineKeyboardButton("• /listind", callback_data="op_list_ind"),
+            types.InlineKeyboardButton("• /listbd", callback_data="op_list_bd")
         )
         markup.add(
-            types.InlineKeyboardButton("🚀 Manual Force Run", callback_data="op_runnow_menu"),
-            types.InlineKeyboardButton("📡 Gateway Status", callback_data="op_gate_status")
+            types.InlineKeyboardButton("• /runnow IND/BD", callback_data="op_runnow_menu"),
+            types.InlineKeyboardButton("• /status APIs", callback_data="op_gate_status")
         )
-        markup.add(types.InlineKeyboardButton("◀️ Return to Core", callback_data="panel_main"))
+        markup.add(types.InlineKeyboardButton("◀️ Back to Menu", callback_data="panel_main"))
 
         admin_txt = (
-            f"╔════════════════════════════╗\n"
-            f"║    ⚡ ADMIN MANAGEMENT     ║\n"
-            f"╚════════════════════════════╝\n\n"
-            f"Welcome to the master cluster routing module. Execute real-time terminal changes instantly below."
+            f"👑 **Admin Command Panel:**\n\n"
+            f"Management features aur pipelines monitor karne ke liye buttons choose karein:"
         )
         try: bot.edit_message_caption(admin_txt, call.message.chat.id, call.message.message_id, parse_mode="Markdown", reply_markup=markup)
         except: bot.edit_message_text(admin_txt, call.message.chat.id, call.message.message_id, parse_mode="Markdown", reply_markup=markup)
@@ -345,22 +337,20 @@ def handle_panels(call):
             
         markup = types.InlineKeyboardMarkup(row_width=1)
         markup.add(
-            types.InlineKeyboardButton("👑 System Admin Controls", callback_data="op_owner_admins"),
-            types.InlineKeyboardButton("🌍 Whitelisted Chat Nodes", callback_data="op_owner_groups"),
-            types.InlineKeyboardButton("📊 Structural Parameter Limits", callback_data="op_owner_limits"),
-            types.InlineKeyboardButton("◀️ Return to Core", callback_data="panel_main")
+            types.InlineKeyboardButton("🛠️ Admin Controls (/addadmin)", callback_data="op_owner_admins"),
+            types.InlineKeyboardButton("🌍 Group Whitelist (/allowgroup)", callback_data="op_owner_groups"),
+            types.InlineKeyboardButton("📊 System Quotas (/viewlimits)", callback_data="op_owner_limits"),
+            types.InlineKeyboardButton("◀️ Back to Menu", callback_data="panel_main")
         )
         owner_txt = (
-            f"╔════════════════════════════╗\n"
-            f"║    👑 ROOT ARCHITECT UNIT  ║\n"
-            f"╚════════════════════════════╝\n\n"
-            f"Secured Master Terminal Node Active. Modify core settings or override privileges safely."
+            f"🛡️ **Owner Only Core Terminal:**\n\n"
+            f"Manage administrative structural configurations securely using buttons below:"
         )
         try: bot.edit_message_caption(owner_txt, call.message.chat.id, call.message.message_id, parse_mode="Markdown", reply_markup=markup)
         except: bot.edit_message_text(owner_txt, call.message.chat.id, call.message.message_id, parse_mode="Markdown", reply_markup=markup)
 
 # ==========================================
-# 🛠️ 7. INLINE OPERATION EXECUTION ENGINE
+# 🛠️ 7. BUTTON ACTION PROCESSORS (ORIGINAL LOGIC)
 # ==========================================
 @bot.callback_query_handler(func=lambda call: call.data.startswith('op_'))
 def execute_operations(call):
@@ -370,23 +360,25 @@ def execute_operations(call):
     if not check_force_join(user_id):
         return bot.answer_callback_query(call.id, f"❌ Access Blocked. Please join {FORCE_CHANNEL} first!", show_alert=True)
 
+    # --- USER EXECUTION ---
     if action in ["op_like_ind", "op_like_bd"]:
         region = "IND" if "ind" in action else "BD"
-        msg = bot.send_message(call.message.chat.id, f"📥 *Terminal Prompt:*\nPlease type or send the target **UID** for `{region}` deployment.", parse_mode="Markdown")
+        msg = bot.send_message(call.message.chat.id, f"📥 **Prompt:** Please type or send the target **UID** for {region} likes.")
         bot.register_next_step_handler(msg, process_user_like_input, region)
         bot.answer_callback_query(call.id)
         
     elif action == "op_mylike":
         bot.answer_callback_query(call.id)
-        bot.send_message(call.message.chat.id, "📊 *System Core Signal:* `ACTIVE` \n⏳ Encryption stream pipeline validated.", parse_mode="Markdown")
+        bot.send_message(call.message.chat.id, "📊 Your Autolike Status: ACTIVE\n⏳ Access granted.")
         
     elif action == "op_plan":
         bot.answer_callback_query(call.id)
-        bot.send_message(call.message.chat.id, f"💎 **COMMERCIAL MATRIX ENTRIES:**\nContact {OWNER_USERNAME} to buy permanent structural routing priority maps.", parse_mode="Markdown")
+        bot.send_message(call.message.chat.id, f"💎 **PREMIUM PLANS:**\nContact {OWNER_USERNAME} for unlimited access & API prioritization.")
 
+    # --- ADMIN EXECUTION ---
     elif action in ["op_auto_ind", "op_auto_bd"]:
         region = "IND" if "ind" in action else "BD"
-        msg = bot.send_message(call.message.chat.id, f"📥 *Admin Prompt:*\nSend parameters in this exact format ➔ `UID DAYS` (Separated by space)", parse_mode="Markdown")
+        msg = bot.send_message(call.message.chat.id, f"📥 **Admin Prompt:** Send arguments in exact format ➔ `UID DAYS` (e.g. 1234567 5)")
         bot.register_next_step_handler(msg, process_admin_autolike_input, region)
         bot.answer_callback_query(call.id)
 
@@ -395,57 +387,58 @@ def execute_operations(call):
         region = "IND" if "ind" in action else "BD"
         try:
             res = supabase.table('autolike_list').select('*').eq('region', region).gt('days_left', 0).execute()
-            txt = f"╔════════════════════════════╗\n║    📊 {region} CURRENT PIPELINE   ║\n╚════════════════════════════╝\n\n"
-            if not res.data: txt += "ℹ️ Matrix instance queue is empty."
+            txt = f"📋 **{region} Autolike List:**\n\n"
+            if not res.data: txt += "ℹ️ Queue is currently empty."
             for idx, r in enumerate(res.data, 1):
-                txt += f"`[{idx}]` 🆔 `{r['uid']}` ➔ ⏳ `{r['days_left']} Cycles Left`\n"
+                txt += f"{idx}. `{r['uid']}` - {r['days_left']} Days\n"
             bot.send_message(call.message.chat.id, txt, parse_mode="Markdown")
-        except: bot.send_message(call.message.chat.id, "⚠️ Structural tracking telemetry failed.")
+        except: bot.send_message(call.message.chat.id, "⚠️ Database fetching error.")
 
     elif action == "op_gate_status":
         bot.answer_callback_query(call.id)
-        txt = "╔════════════════════════════╗\n║    📡 SHIVAY GATEWAY NODE    ║\n╚════════════════════════════╝\n\n*🇮🇳 India Cluster Array:*\n"
+        txt = "📡 **SHIVAY EXCLUSIVE - API STATUS**\n\n**🇮🇳 India APIs:**\n"
         for k in ['api1', 'api2', 'api3', 'api4', 'api5']:
-            if k in API_POOL: txt += f" {'🟢' if API_POOL[k]['status'] else '🔴'} ➔ {API_POOL[k]['name']}\n"
-        txt += "\n*🇧🇩 Bangladesh Cluster Array:*\n"
+            if k in API_POOL: txt += f"{'🟢 ON' if API_POOL[k]['status'] else '🔴 OFF'} - {API_POOL[k]['name']}\n"
+        txt += "\n**🇧🇩 Bangladesh APIs:**\n"
         for k in ['bdapi1', 'bdapi2', 'bd3']:
-            if k in API_POOL: txt += f" {'🟢' if API_POOL[k]['status'] else '🔴'} ➔ {API_POOL[k]['name']}\n"
-        txt += "\n**Gateway Load:** `Optimal` \n🤖 *Protection Module:* `Simulation Active`"
+            if k in API_POOL: txt += f"{'🟢 ON' if API_POOL[k]['status'] else '🔴 OFF'} - {API_POOL[k]['name']}\n"
+        txt += "\n⚡ **System Load:** Optimal\n🤖 **Anti-Ban Engine:** Active (Real API Mode)"
         bot.send_message(call.message.chat.id, txt, parse_mode="Markdown")
 
     elif action == "op_runnow_menu":
         bot.answer_callback_query(call.id)
         markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("💥 Execute IND Batch", callback_data="run_force_ind"))
-        markup.add(types.InlineKeyboardButton("💥 Execute BD Batch", callback_data="run_force_bd"))
-        bot.send_message(call.message.chat.id, "⚠️ *Critical Section:* Select region to deploy instant batch loops.", reply_markup=markup)
+        markup.add(types.InlineKeyboardButton("🚀 Run IND Pipeline Now", callback_data="run_force_ind"))
+        markup.add(types.InlineKeyboardButton("🚀 Run BD Pipeline Now", callback_data="run_force_bd"))
+        bot.send_message(call.message.chat.id, "⚠️ **Manual Override:** Choose region pipeline to deploy instant batch process:", reply_markup=markup)
 
+    # --- OWNER EXECUTION ---
     elif action == "op_owner_limits":
         bot.answer_callback_query(call.id)
-        bot.send_message(call.message.chat.id, f"📊 **THRESHOLD METRIC ALLOCATIONS:**\n• Client Interface Quota: 1/Day (Strict Locked Node)\n• Admin Matrix Quota: 5/Day\n• Master Matrix Quota: Absolute Override", parse_mode="Markdown")
+        bot.send_message(call.message.chat.id, f"📊 **CURRENT LIMITS:**\nNormal User: 1/day (1 UID Locked)\nAdmin: 5/day\nOwner: Unlimited")
 
     elif action == "op_owner_admins":
         bot.answer_callback_query(call.id)
         try:
             res = supabase.table('users').select('user_id').eq('role', 'admin').execute()
-            txt = "👑 **ADMIN MAIN ARCHIVE SIGNATURES:**\n\n"
-            if not res.data: txt += "📋 No signatures linked in admin schema."
-            for idx, r in enumerate(res.data, 1): txt += f"`[{idx}]` 🆔 Node Key: `{r['user_id']}`\n"
+            txt = "👑 **CURRENT ADMINS:**\n\n"
+            if not res.data: txt += "📋 No admins found."
+            for idx, r in enumerate(res.data, 1): txt += f"{idx}. `{r['user_id']}`\n"
             bot.send_message(call.message.chat.id, txt, parse_mode="Markdown")
-        except: bot.send_message(call.message.chat.id, "❌ DB Telemetry Interruption.")
+        except: bot.send_message(call.message.chat.id, "❌ DB Error.")
 
     elif action == "op_owner_groups":
         bot.answer_callback_query(call.id)
         try:
             res = supabase.table('allowed_groups').select('group_id').execute()
-            txt = "🌍 **AUTHORIZED CHAT SOCKET NODES:**\n\n"
-            if not res.data: txt += "📋 No whitelisted cluster nodes located."
-            for idx, r in enumerate(res.data, 1): txt += f"`[{idx}]` 📡 Socket: `{r['group_id']}`\n"
+            txt = "🌍 **ALLOWED GROUPS:**\n\n"
+            if not res.data: txt += "📋 No allowed groups found."
+            for idx, r in enumerate(res.data, 1): txt += f"{idx}. `{r['group_id']}`\n"
             bot.send_message(call.message.chat.id, txt, parse_mode="Markdown")
-        except: bot.send_message(call.message.chat.id, "❌ Query Struct Interrupted.")
+        except: bot.send_message(call.message.chat.id, "❌ DB Error.")
 
 # ==========================================
-# 📥 8. TEXT INPUT REGISTRATION STEP HANDLERS
+# 📥 8. TEXT INPUT STEP REGISTRATIONS
 # ==========================================
 def process_user_like_input(message, region):
     uid = message.text.strip()
@@ -453,12 +446,12 @@ def process_user_like_input(message, region):
     user_name = message.from_user.first_name
     
     if not uid.isdigit():
-        return bot.reply_to(message, "❌ *Input Error:* UID must contain digits only. Operation terminated.", parse_mode="Markdown")
+        return bot.reply_to(message, "❌ **ERROR:** UID format incorrect. Pls digits only.")
         
     is_allowed, msg = check_limit_and_uid(user_id, uid)
     if not is_allowed:
         markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("💎 ELEVATE TO PREMIUM", url=f"https://t.me/{OWNER_USERNAME.replace('@', '')}"))
+        markup.add(types.InlineKeyboardButton("💎 BUY PREMIUM", url=f"https://t.me/{OWNER_USERNAME.replace('@', '')}"))
         return bot.reply_to(message, msg, parse_mode="Markdown", reply_markup=markup)
 
     threading.Thread(target=process_like_thread, args=(message, uid, region, user_id, user_name)).start()
@@ -468,37 +461,37 @@ def process_admin_autolike_input(message, region):
     try:
         parts = message.text.split()
         if len(parts) < 2:
-            return bot.reply_to(message, "⚠️ *Parsing Failure:* Please provide both `UID` and `DAYS`.", parse_mode="Markdown")
+            return bot.reply_to(message, "⚠️ **Syntax Error:** Please provide both UID and DAYS.")
         uid, days = parts[0].strip(), parts[1].strip()
         
         supabase.table('autolike_list').upsert({"uid": str(uid), "region": str(region), "days_left": int(days)}).execute()
-        bot.reply_to(message, f"✅ *Pipeline Configuration Linked!*\n🆔 Target: `{uid}`\n🌍 Cluster: `{region}`\n⏳ Runtime: `{days} Days`", parse_mode="Markdown")
+        bot.reply_to(message, f"✅ **Autolike Added!**\n🆔 `{uid}`\n🌍 Region: {region}\n⏳ Days: {days}", parse_mode="Markdown")
     except Exception as e:
-        bot.reply_to(message, f"❌ *Schema Post Exception:* {e}", parse_mode="Markdown")
+        bot.reply_to(message, f"❌ DB Error: {e}")
 
 # ==========================================
-# 💥 9. FORCE EXECUTION CALLBACK HANDLERS
+# 💥 9. FORCE RUN BATCH EXECUTIONS
 # ==========================================
 @bot.callback_query_handler(func=lambda call: call.data.startswith('run_force_'))
 def execute_force_batch(call):
     if not is_admin(call.from_user.id): return
     region = "IND" if "ind" in call.data else "BD"
-    bot.answer_callback_query(call.id, f"Initiating {region} Batch Execution...")
-    bot.send_message(call.message.chat.id, f"🚀 *FORCE RUN SEQUENCE:* Initializing instant batch compilation for `{region}` nodes.", parse_mode="Markdown")
+    bot.answer_callback_query(call.id, f"Running scheduled {region} batch process...")
+    bot.send_message(call.message.chat.id, f"🚀 **INSTANT RUN INITIATED:** Injecting REAL likes to {region} UIDs right now! Anti-ban sequence started.")
     
     try:
         res = supabase.table('autolike_list').select('uid').eq('region', region).gt('days_left', 0).execute()
         for record in res.data:
             uid = record['uid']
-            threading.Thread(target=process_like_thread, args=(call.message, uid, region, OWNER_ID, "Force-Scheduler")).start()
+            threading.Thread(target=process_like_thread, args=(call.message, uid, region, OWNER_ID, "Auto-Scheduler")).start()
     except Exception as e:
         print(e)
 
 # ==========================================
-# 🔄 10. STANDARD ROUTING COMPATIBILITY FALLBACKS
+# 🔄 10. BACKEND LOGIC THREAD BRIDGE
 # ==========================================
 def process_like_thread(message, uid, region, user_id, user_name):
-    processing_msg = bot.send_message(message.chat.id, f"⚡ *Socket Bridge Initialized:*\nConnecting target proxy for UID: `{uid}` ({region})...\n\n_Executing multi-map movement telemetry arrays..._", parse_mode="Markdown")
+    processing_msg = bot.send_message(message.chat.id, f"⏳ System initialized. Engaging real connection for UID: `{uid}` ({region}).\n\n_Executing anti-ban movement logic..._")
     
     api_data = hit_real_api(uid, region)
     if api_data:
@@ -509,10 +502,10 @@ def process_like_thread(message, uid, region, user_id, user_name):
     else:
         try: bot.delete_message(message.chat.id, processing_msg.message_id)
         except: pass
-        bot.send_message(message.chat.id, "❌ *Fatal Gate Error:* API cluster timed out or load exceeded.", parse_mode="Markdown")
+        bot.send_message(message.chat.id, "❌ **ERROR:** API servers are currently busy or failed. Please try again later.")
 
 # ==========================================
-# 🌅 11. MORNING AUTOMATION SCHEDULER
+# 🌅 11. DAILY SCHEDULED CRON BATCH (04:05 AM)
 # ==========================================
 def run_morning_autolikes():
     print(f"[{datetime.datetime.now()}] 🌅 Running Scheduled Auto-Likes Batch...")
@@ -525,19 +518,17 @@ def run_morning_autolikes():
         print(f"Scheduler Error: {e}")
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(run_morning_autolikes, 'cron', hour=4, minute=5) # Fixed to exact 04:05 AM
+scheduler.add_job(run_morning_autolikes, 'cron', hour=4, minute=5)
 scheduler.start()
 
 # ==========================================
-# 🟢 12. SYSTEM LAUNCH (MULTITHREADED FLASK + BOT)
+# 🟢 12. RUN ENGINE MULTITHREADED
 # ==========================================
 if __name__ == '__main__':
-    # 1. Start Flask web server in a separate background thread
     print("🌐 Starting local Flask bridge server for 24/7 uptime...")
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.daemon = True
     flask_thread.start()
 
-    # 2. Start Telegram Infinity Polling on Main Thread
     print("🚀 SHIVAY Bot Engine Started (100% REAL APIs Active)...")
     bot.infinity_polling(timeout=10, long_polling_timeout=5)
