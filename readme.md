@@ -1,4 +1,4 @@
-# 🚀 ROCK X ANIRBAN - PREMIUM AUTO-LIKE BOT (Setup Guide)
+# 🚀 PREMIUM AUTO-LIKE BOT (Setup Guide)
 
 Bhai, sabse pehle toh congratulations! Yeh koi normal free wala bot nahi hai. Yeh ekdam professional, Anti-Ban system aur asli APIs ke sath aane wala bot hai. 
 
@@ -65,7 +65,7 @@ Jab bot start hota hai ya likes bhejta hai, toh ek badhiya si photo aati hai.
 Bas, itna hi karna tha! Ab wapas apne Terminal/CMD mein aao aur type karo:
 `python bot.py`
 
-Jaise hi tum enter maroge, likha aayega: **"🚀 ROCK X ANIRBAN Bot Engine Started..."**
+Jaise hi tum enter maroge, likha aayega: **"🚀 Bot Engine Started..."**
 Iska matlab tumhara bot internet par live ho chuka hai! Jao aur Telegram par apne bot ko `/start` bhej kar dekho.
 
 ---
