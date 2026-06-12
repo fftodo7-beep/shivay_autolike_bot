@@ -20,8 +20,8 @@ OWNER_USERNAME = "@shivay1m"
 FORCE_CHANNEL = "@aadixff"  
 
 # SUPABASE CREDENTIALS
-SUPABASE_URL = "YOUR_SUPABASE_URL".strip()
-SUPABASE_KEY = "YOUR_SUPABASE_API_KEY".strip()
+SUPABASE_URL = "https://prpndfuejjommcrqtvaq.supabase.co".strip()
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBycG5kZnVlampvbW1jcnF0dmFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjQ0NzgsImV4cCI6MjA5Njg0MDQ3OH0.RSkZRCXJXiyxUeOKNRLiXUcDE4iUNOzXVCbGMqncpLA".strip()
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 bot = telebot.TeleBot(BOT_TOKEN, threaded=True)
