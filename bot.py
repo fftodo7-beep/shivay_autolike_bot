@@ -12,9 +12,9 @@ from flask import Flask # <-- 24/7 LIVE RAKHNE KE LIYE FLASK INJECT KIYA
 # ==========================================
 # ⚙️ 1. CORE CONFIGURATION
 # ==========================================
-BOT_TOKEN = "TELEGRAM_BOT_TOKEN"
-OWNER_ID = "987654321"  
-OWNER_USERNAME = "@YOURUSERNAME" 
+BOT_TOKEN = "8978325346:AAEFdbktSr5OhZ3wiH01m9TAhiEZbclz6fA"
+OWNER_ID = "7973796027"  
+OWNER_USERNAME = "@shivay1m" 
 
 # FORCE JOIN CONFIGURATION
 FORCE_CHANNEL = "@aadixff"  
