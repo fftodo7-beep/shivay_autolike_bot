@@ -175,16 +175,16 @@ def hit_real_api(uid, region, execution_type="single"):
 def send_success_report(chat_id, uid, region, api_data, execution_type="single"):
     if execution_type == "autolike":
         caption = (
-            f"✅ **AUTOLIKES SENT SUCCESSFULLY**\n\n"
-            f"👤 **NAME:** {api_data['game_name']}\n"
-            f"🆔 **UID:** `{uid}`\n"
-            f"🌍 **REGION:** {region}\n"
-            f"📊 **BEFORE:** {api_data['before']}\n"
-            f"➕ **ADD:** +{api_data['added']}\n"
-            f"📈 **AFTER:** {int(api_data['before']) + int(api_data['added'])}\n"
-            f"⏳ **DAYS LEFT:** {api_data.get('days', 'N/A')}\n"
-            f"👑 **OWNER:** SHIVAY\n"
-            f"🙏 **THANKS FOR USING**"
+            f"✅ AUTOLIKES SENT SUCCESSFULLY\n\n"
+            f"👤 NAME: {api_data['game_name']}\n"
+            f"🆔 UID: `{uid}`\n"
+            f"🌍 REGION: {region}\n"
+            f"📊 BEFORE: {api_data['before']}\n"
+            f"➕ ADD: +{api_data['added']}\n"
+            f"📈 AFTER: {int(api_data['before']) + int(api_data['added'])}\n"
+            f"⏳ DAYS LEFT: {api_data.get('days', 'N/A')}\n"
+            f"👑 OWNER: SHIVAY\n"
+            f"🙏 THANKS FOR USING"
         )
     else:
         caption = (
@@ -405,7 +405,7 @@ def process_button_commands(call):
         bot.send_message(call.message.chat.id, "📊 Aapka Autolike status active hai. Sabhi functions smoothly chal rahe hain.")
         
     elif action == "cmd_plan":
-        bot.send_message(call.message.chat.id, f"💎 Unlimited daily usage, extreme high speed aur multiple slots buy karne ke liye {OWNER_USERNAME} se contact karein.")
+        bot.send_message(call.message.chat.id, f"💎 180+ like buy karne ke liye {OWNER_USERNAME} se contact karein.")
 
     # --- ADMIN ACTIONS ---
     elif action in ["cmd_auto_ind", "cmd_auto_bd"]:
@@ -630,7 +630,8 @@ def process_like_thread(message, uid, region, user_id, execution_type="single", 
                 f"⚠️ LIMIT REACHED ⚠️\n\n"
                 f"👤 PLAYER: {api_data['game_name']}\n"
                 f"🆔 UID: `{uid}`\n"
-                f"❌ Error: Is account par aaj ke maximum likes limits pehle se reached hain!"
+                f"❌ Maximum Likes Reached!"
+                f"🌐 By Autolike for more.
             )
             bot.send_message(message.chat.id, limit_txt)
         else:
@@ -658,7 +659,7 @@ def run_morning_autolikes():
     except Exception as e: print(f"Scheduler Error: {e}")
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(run_morning_autolikes, 'cron', hour=4, minute=5)
+scheduler.add_job(run_morning_autolikes, 'cron', hour=4, minute=0)
 scheduler.start()
 
 # ==========================================
