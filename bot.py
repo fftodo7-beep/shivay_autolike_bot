@@ -157,7 +157,7 @@ def hit_real_api(uid, region, execution_type="single"):
         time.sleep(60)
 
     try:
-        response = requests.get(f"{api_url}?uid={uid}&server_name={region.lower()}&region={region.lower()}", timeout=45)
+        response = requests.get(f"{api_url}?uid={uid}&server_name={region.lower()}&region={region.lower()}", timeout=15)
         if response.status_code == 200:
             data = response.json()
             print(f"[ENGINE] Payload: {data}")
@@ -404,14 +404,14 @@ def process_button_commands(call):
     # --- RESTRUCTURED CLEAN VISUAL PROMPTS ---
     if action in ["cmd_like_ind", "cmd_like_bd"]:
         region = "IND" if "ind" in action else "BD"
-        msg = bot.send_message(call.message.chat.id, f"📥 likes bhejney ke liye target account ka **UID** enter karke send karein (Server: {region}):")
+        msg = bot.send_message(call.message.chat.id, f"📥 likes bhejney ke liye target account ka UIDℹ️ enter karke send karein (Server: {region}):")
         bot.register_next_step_handler(msg, process_user_like_input, region)
         
     elif action == "cmd_mylike":
         bot.send_message(call.message.chat.id, "📊 Aapka Autolike status active hai. Sabhi functions smoothly chal rahe hain.")
         
     elif action == "cmd_plan":
-        bot.send_message(call.message.chat.id, f"💎 Unlimited daily usage, extreme high speed aur multiple slots buy karne ke liye {OWNER_USERNAME} se contact karein.")
+        bot.send_message(call.message.chat.id, f"💎 Daily 180+ Autolike ke liye {OWNER_USERNAME} se contact karein.")
 
     # --- ADMIN ACTIONS ---
     elif action in ["cmd_auto_ind", "cmd_auto_bd"]:
