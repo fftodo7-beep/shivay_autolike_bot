@@ -28,7 +28,7 @@ bot = telebot.TeleBot(BOT_TOKEN, threaded=True)
 
 # 🎛️ REAL API POOL
 API_POOL = {
-    "api1": {"status": True, "name": "V1 Premium (IND)", "region": "IND", "url": "https://your-real-api.com/like_ind_v1"},
+    "api1": {"status": True, "name": "V1 Premium (IND)", "region": "IND", "url": "https://darki-like.vercel.app/like_ind_v1"},
     "api2": {"status": True, "name": "V2 Fast (IND)", "region": "IND", "url": "https://your-real-api.com/like_ind_v2"},
     "api3": {"status": True, "name": "V3 Backup (IND)", "region": "IND", "url": "https://your-real-api.com/like_ind_v3"},
     "api4": {"status": False, "name": "V4 Routing (IND)", "region": "IND", "url": "https://your_api.com/like_ind_v4"},
@@ -45,7 +45,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "⚡ SHIVAY MATRIX CORE IS RUNNING 24/7 ⚡"
+    return "⚡ SHIVAY AUTO LIKE BOT IS RUNNING 24/7 ⚡"
 
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
