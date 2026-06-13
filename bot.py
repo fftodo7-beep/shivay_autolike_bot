@@ -400,7 +400,7 @@ def process_button_commands(call):
         bot.send_message(call.message.chat.id, "📊 Aapka Autolike status active hai. Sabhi functions smoothly chal rahe hain.")
         
     elif action == "cmd_plan":
-        bot.send_message(call.message.chat.id, f"💎 Unlimited daily usage, extreme high speed aur multiple slots buy karne ke liye {OWNER_USERNAME} se contact karein.")
+        bot.send_message(call.message.chat.id, f"💎 180+ Autolike ke liye {OWNER_USERNAME} se contact karein.")
 
     # --- ADMIN ACTIONS ---
     elif action in ["cmd_auto_ind", "cmd_auto_bd"]:
@@ -420,7 +420,7 @@ def process_button_commands(call):
 
     elif action in ["cmd_removeind", "cmd_removebd"]:
         region = "IND" if "removeind" in action else "BD"
-        msg = bot.send_message(call.message.chat.id, f"🗑️ `{region}` Auto pipeline list se user delete karne ke liye uska **UID** send karein:")
+        msg = bot.send_message(call.message.chat.id, f"🗑️ `{region}` Auto pipeline list se user delete karne ke liye uska UID send karein:")
         bot.register_next_step_handler(msg, process_admin_remove_input, region)
 
     elif action in ["cmd_runnowind", "cmd_runnowbd"]:
