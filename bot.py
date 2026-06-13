@@ -13,7 +13,7 @@ from flask import Flask
 # ⚙️ 1. CORE CONFIGURATION & STATE CORES
 # ==========================================
 BOT_TOKEN = "8978325346:AAEFdbktSr5OhZ3wiH01m9TAhiEZbclz6fA"
-OWNER_ID = "7973796027"  
+OWNER_ID = "7973796027"    
 OWNER_USERNAME = "@shivay1m" 
 FORCE_CHANNEL = "@aadixff"  
 
@@ -87,9 +87,6 @@ def get_join_keyboard():
     return markup
 
 def check_limit_only(user_id):
-    """
-    ID LOCK SYSTEM REMOVED completely as requested. Only tracks user limits.
-    """
     if is_owner(user_id): return True, "Success"
     today = datetime.date.today().strftime("%Y-%m-%d")
     response = supabase.table('users').select('*').eq('user_id', int(user_id)).execute()
@@ -146,8 +143,6 @@ def hit_real_api(uid, region, execution_type="single"):
         return False
 
     print(f"[ENGINE] Processing fast request on server: {selected_api['name']}")
-    
-    # 5-Minute Simulation delay removed completely as requested for fast 15-second execution
     time.sleep(2) 
 
     try:
@@ -405,7 +400,7 @@ def process_button_commands(call):
         bot.send_message(call.message.chat.id, "📊 Aapka Autolike status active hai. Sabhi functions smoothly chal rahe hain.")
         
     elif action == "cmd_plan":
-        bot.send_message(call.message.chat.id, f"💎 180+ like buy karne ke liye {OWNER_USERNAME} se contact karein.")
+        bot.send_message(call.message.chat.id, f"💎 Unlimited daily usage, extreme high speed aur multiple slots buy karne ke liye {OWNER_USERNAME} se contact karein.")
 
     # --- ADMIN ACTIONS ---
     elif action in ["cmd_auto_ind", "cmd_auto_bd"]:
@@ -482,7 +477,6 @@ def process_button_commands(call):
             if k in API_POOL: txt += f" {'🟢' if API_POOL[k]['status'] else '🔴'} Server Node ➔ `{API_POOL[k]['name']}`\n"
         bot.send_message(call.message.chat.id, txt, parse_mode="Markdown")
 
-    # --- 1-TAP QUICK TOGGLE CORES ---
     elif action.startswith("tgl_"):
         node = action.replace("tgl_", "")
         if node in API_POOL:
@@ -532,7 +526,6 @@ def process_user_like_input(message, region):
         markup.add(types.InlineKeyboardButton("💎 BUY PREMIUM PLAN NOW", url=f"https://t.me/{OWNER_USERNAME.replace('@', '')}"))
         return bot.reply_to(message, msg, parse_mode="Markdown", reply_markup=markup)
     
-    # Premium Clean Order Placed Prompt format mapped with emojis
     processing_txt = (
         f"📦 ORDER PLACED! 🚀\n\n"
         f"🌐 Server: {region}\n"
@@ -619,26 +612,23 @@ def process_like_thread(message, uid, region, user_id, execution_type="single", 
     
     api_data = hit_real_api(uid, region, execution_type)
     
-    # Clean up processing/order message first
     try: bot.delete_message(message.chat.id, processing_msg_id)
     except: pass
 
     if api_data:
-        # Check requirement: if 0 likes received, show limit reached message with emojis
         if api_data['added'] == 0:
             limit_txt = (
                 f"⚠️ LIMIT REACHED ⚠️\n\n"
                 f"👤 PLAYER: {api_data['game_name']}\n"
                 f"🆔 UID: `{uid}`\n"
-                f"❌ Maximum Likes Reached!"
-                f"🌐 By Autolike for more.
+                f"❌ Maximum Likes Reached!\n"
+                f"🌐 Buy Autolike for more."
             )
             bot.send_message(message.chat.id, limit_txt)
         else:
             increment_use(user_id)
             send_success_report(message.chat.id, uid, region, api_data, execution_type)
     else:
-        # Simple clean connection error response 
         error_txt = (
             f"❌ API SERVER ERROR\n\n"
             f"API connection timed out ya server down ho gaya hai.\n"
