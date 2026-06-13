@@ -86,7 +86,10 @@ def get_join_keyboard():
     markup.add(types.InlineKeyboardButton("🔄 VERIFY & RESTART", callback_data="menu_main"))
     return markup
 
-def check_limit_and_uid(user_id, target_uid):
+def check_limit_only(user_id):
+    """
+    ID LOCK SYSTEM REMOVED completely as requested. Only tracks user limits.
+    """
     if is_owner(user_id): return True, "Success"
     today = datetime.date.today().strftime("%Y-%m-%d")
     response = supabase.table('users').select('*').eq('user_id', int(user_id)).execute()
@@ -95,25 +98,18 @@ def check_limit_and_uid(user_id, target_uid):
     if not user_data:
         supabase.table('users').insert({
             'user_id': int(user_id), 'role': 'normal', 'likes_used': 0, 
-            'last_reset': today, 'registered_uid': target_uid
+            'last_reset': today
         }).execute()
-        role, likes_used, last_reset, reg_uid = 'normal', 0, today, target_uid
+        role, likes_used, last_reset = 'normal', 0, today
     else:
         u = user_data[0]
         role = u.get('role', 'normal')
         likes_used = u.get('likes_used', 0)
         last_reset = u.get('last_reset', today)
-        reg_uid = u.get('registered_uid', None)
         
         if last_reset != today:
             likes_used = 0
             supabase.table('users').update({'likes_used': 0, 'last_reset': today}).eq('user_id', int(user_id)).execute()
-
-    if role == 'normal':
-        if reg_uid and str(reg_uid) != str(target_uid):
-            return False, f"❌ ERROR: Aap sirf 1 UID par likes bhej sakte hain.\nAapki registered UID hai: `{reg_uid}`"
-        if not reg_uid:
-            supabase.table('users').update({'registered_uid': target_uid}).eq('user_id', int(user_id)).execute()
 
     max_limit = 5 if role == 'admin' else 1
     if likes_used >= max_limit:
@@ -128,7 +124,7 @@ def increment_use(user_id):
         supabase.table('users').update({'likes_used': res.data[0]['likes_used'] + 1}).eq('user_id', int(user_id)).execute()
 
 # ==========================================
-# 🚀 4. REAL API ENGINE (5-MIN RUN BYPASS)
+# 🚀 4. REAL API ENGINE (FAST 15-SEC HIT)
 # ==========================================
 def hit_real_api(uid, region, execution_type="single"):
     if execution_type == "runnow":
@@ -149,51 +145,51 @@ def hit_real_api(uid, region, execution_type="single"):
     if not api_url or "your-real-api.com" in api_url:
         return False
 
-    print(f"[ENGINE] Running on server: {selected_api['name']}")
+    print(f"[ENGINE] Processing fast request on server: {selected_api['name']}")
     
-    # 5-Minute In-game Movement Loop Simulation for account safety
-    for minute in range(1, 6):
-        print(f"[ENGINE] Safe Movement Bypass Mode Active (Minute {minute}/5)...")
-        time.sleep(60)
+    # 5-Minute Simulation delay removed completely as requested for fast 15-second execution
+    time.sleep(2) 
 
     try:
         response = requests.get(f"{api_url}?uid={uid}&server_name={region.lower()}&region={region.lower()}", timeout=15)
         if response.status_code == 200:
             data = response.json()
-            print(f"[ENGINE] Payload: {data}")
+            print(f"[ENGINE] Server Payload: {data}")
             
             likes_before = data.get("before", data.get("LikesBeforeCommand", data.get("current_likes", 0)))
             likes_added = data.get("added", data.get("LikesGivenByAPI", data.get("likes_sent", 0)))
+            player_name = data.get("PlayerNickname", data.get("nickname", data.get("name", "N/A")))
             days_left = data.get("days", data.get("days_remaining", "N/A"))
             
             return {
                 "before": int(likes_before or 0),
                 "added": int(likes_added or 0),
+                "game_name": str(player_name),
                 "days": str(days_left)
             }
         return False
     except Exception as e:
-        print(f"[ENGINE] Exception: {e}")
+        print(f"[ENGINE] Request Timed out or Exception: {e}")
         return False
 
-def send_success_report(chat_id, uid, region, api_data, user_name, execution_type="single"):
+def send_success_report(chat_id, uid, region, api_data, execution_type="single"):
     if execution_type == "autolike":
         caption = (
-            f"✅ AUTOLIKES SENT SUCCESSFULLY\n\n"
-            f"👤 NAME: {user_name}\n"
-            f"🆔 UID: `{uid}`\n"
-            f"🌍 REGION: {region}\n"
-            f"📊 BEFORE: {api_data['before']}\n"
-            f"➕ ADD: +{api_data['added']}\n"
-            f"📈 AFTER: {int(api_data['before']) + int(api_data['added'])}\n"
-            f"⏳ DAYS LEFT: {api_data.get('days', 'N/A')}\n"
-            f"👑 OWNER: SHIVAY\n"
-            f"🙏 THANKS FOR USING"
+            f"✅ **AUTOLIKES SENT SUCCESSFULLY**\n\n"
+            f"👤 **NAME:** {api_data['game_name']}\n"
+            f"🆔 **UID:** `{uid}`\n"
+            f"🌍 **REGION:** {region}\n"
+            f"📊 **BEFORE:** {api_data['before']}\n"
+            f"➕ **ADD:** +{api_data['added']}\n"
+            f"📈 **AFTER:** {int(api_data['before']) + int(api_data['added'])}\n"
+            f"⏳ **DAYS LEFT:** {api_data.get('days', 'N/A')}\n"
+            f"👑 **OWNER:** SHIVAY\n"
+            f"🙏 **THANKS FOR USING**"
         )
     else:
         caption = (
             f"✅ LIKES SENT SUCCESSFULLY\n"
-            f"👤 NAME: {user_name}\n"
+            f"👤 NAME: {api_data['game_name']}\n"
             f"🆔 UID: `{uid}`\n"
             f"🌍 REGION: {region}\n"
             f"📊 BEFORE: {api_data['before']}\n"
@@ -340,7 +336,6 @@ def handle_menu_navigation(call):
 
     elif action == "menu_api":
         if not is_admin(user_id): return bot.answer_callback_query(call.id, "❌ Admin access missing.", show_alert=True)
-        # Direct 1-Tap Toggle System: Buttons state reads dynamically
         markup = types.InlineKeyboardMarkup(row_width=2)
         markup.add(
             types.InlineKeyboardButton(f"API 1 - {'🟢 ON' if API_POOL['api1']['status'] else '🔴 OFF'}", callback_data="tgl_api1"),
@@ -401,17 +396,16 @@ def process_button_commands(call):
     
     if not check_force_join(user_id): return
 
-    # --- RESTRUCTURED CLEAN VISUAL PROMPTS ---
     if action in ["cmd_like_ind", "cmd_like_bd"]:
         region = "IND" if "ind" in action else "BD"
-        msg = bot.send_message(call.message.chat.id, f"📥 likes bhejney ke liye target account ka UIDℹ️ enter karke send karein (Server: {region}):")
+        msg = bot.send_message(call.message.chat.id, f"📥 likes bhejney ke liye target account ka **UID** enter karke send karein (Server: {region}):")
         bot.register_next_step_handler(msg, process_user_like_input, region)
         
     elif action == "cmd_mylike":
         bot.send_message(call.message.chat.id, "📊 Aapka Autolike status active hai. Sabhi functions smoothly chal rahe hain.")
         
     elif action == "cmd_plan":
-        bot.send_message(call.message.chat.id, f"💎 Daily 180+ Autolike ke liye {OWNER_USERNAME} se contact karein.")
+        bot.send_message(call.message.chat.id, f"💎 Unlimited daily usage, extreme high speed aur multiple slots buy karne ke liye {OWNER_USERNAME} se contact karein.")
 
     # --- ADMIN ACTIONS ---
     elif action in ["cmd_auto_ind", "cmd_auto_bd"]:
@@ -440,10 +434,9 @@ def process_button_commands(call):
         try:
             res = supabase.table('autolike_list').select('uid').eq('region', region).gt('days_left', 0).execute()
             for record in res.data:
-                threading.Thread(target=process_like_thread, args=(call.message, record['uid'], region, OWNER_ID, "Force-Scheduler", "runnow")).start()
+                threading.Thread(target=process_like_thread, args=(call.message, record['uid'], region, OWNER_ID, "runnow")).start()
         except Exception as e: print(e)
 
-    # --- SETUP MATRIX PACKAGES ---
     elif action in ["set_matrix_runnow", "set_matrix_auto"]:
         target_matrix = "runnow_nodes" if "runnow" in action else "autolike_nodes"
         markup = types.InlineKeyboardMarkup(row_width=2)
@@ -489,12 +482,11 @@ def process_button_commands(call):
             if k in API_POOL: txt += f" {'🟢' if API_POOL[k]['status'] else '🔴'} Server Node ➔ `{API_POOL[k]['name']}`\n"
         bot.send_message(call.message.chat.id, txt, parse_mode="Markdown")
 
-    # --- 1-TAP API TOGGLE RE-RENDER HANDLING ---
+    # --- 1-TAP QUICK TOGGLE CORES ---
     elif action.startswith("tgl_"):
         node = action.replace("tgl_", "")
         if node in API_POOL:
             API_POOL[node]['status'] = not API_POOL[node]['status']
-            # Re-render menu_api to switch button text instantly without re-typing
             call.data = "menu_api"
             handle_menu_navigation(call)
 
@@ -524,7 +516,7 @@ def process_button_commands(call):
         bot.register_next_step_handler(msg, process_owner_broadcast)
 
     elif action == "cmd_setlimit":
-        msg = bot.send_message(call.message.chat.id, "🔒 Normal users ke liye daily custom safe limit allocations data type karke send karein:")
+        msg = bot.send_message(call.message.chat.id, "🔒 Type the custom standard limit configurations data to save:")
         bot.register_next_step_handler(msg, process_owner_set_limit)
 
 # ==========================================
@@ -533,23 +525,23 @@ def process_button_commands(call):
 def process_user_like_input(message, region):
     uid = message.text.strip()
     if not uid.isdigit(): return bot.reply_to(message, "❌ ERROR: UID galat hai, sirf numbers ka use karein.")
-    is_allowed, msg = check_limit_and_uid(message.from_user.id, uid)
+    
+    is_allowed, msg = check_limit_only(message.from_user.id)
     if not is_allowed:
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("💎 BUY PREMIUM PLAN NOW", url=f"https://t.me/{OWNER_USERNAME.replace('@', '')}"))
         return bot.reply_to(message, msg, parse_mode="Markdown", reply_markup=markup)
     
-    # Requirement matched: ORDER PLACED! text on screen during loading
+    # Premium Clean Order Placed Prompt format mapped with emojis
     processing_txt = (
-        f" ORDER PLACED!\n\n"
-        f" Server: {region}\n"
-        f" UID: {uid}\n"
-        f" Status: Delivery in progress!\n\n"
-        f"Anti-ban bypass system check run ho raha hai, please wait..."
+        f"📦 ORDER PLACED! 🚀\n\n"
+        f"🌐 Server: {region}\n"
+        f"🆔 UID: {uid}\n"
+        f"⚡ Status: Delivery in progress! ⏳"
     )
     processing_msg = bot.send_message(message.chat.id, processing_txt)
     
-    threading.Thread(target=process_like_thread, args=(message, uid, region, message.from_user.id, message.from_user.first_name, "single", processing_msg.message_id)).start()
+    threading.Thread(target=process_like_thread, args=(message, uid, region, message.from_user.id, "single", processing_msg.message_id)).start()
 
 def process_admin_autolike_input(message, region):
     if not is_admin(message.from_user.id): return
@@ -619,27 +611,37 @@ def process_owner_set_limit(message):
 # ==========================================
 # 🔄 9. RUN BRIDGE LOGIC THREAD RE-ROUTING
 # ==========================================
-def process_like_thread(message, uid, region, user_id, user_name, execution_type="single", processing_msg_id=None):
+def process_like_thread(message, uid, region, user_id, execution_type="single", processing_msg_id=None):
     if processing_msg_id is None:
         processing_txt = f"🚀 Autolike batch cycle initialized for UID: `{uid}` ({region}). Delivery in progress..."
         processing_msg = bot.send_message(message.chat.id, processing_txt)
         processing_msg_id = processing_msg.message_id
     
     api_data = hit_real_api(uid, region, execution_type)
+    
+    # Clean up processing/order message first
+    try: bot.delete_message(message.chat.id, processing_msg_id)
+    except: pass
+
     if api_data:
-        increment_use(user_id)
-        try: bot.delete_message(message.chat.id, processing_msg_id)
-        except: pass
-        send_success_report(message.chat.id, uid, region, api_data, user_name, execution_type)
+        # Check requirement: if 0 likes received, show limit reached message with emojis
+        if api_data['added'] == 0:
+            limit_txt = (
+                f"⚠️ LIMIT REACHED ⚠️\n\n"
+                f"👤 PLAYER: {api_data['game_name']}\n"
+                f"🆔 UID: `{uid}`\n"
+                f"❌ Error: Is account par aaj ke maximum likes limits pehle se reached hain!"
+            )
+            bot.send_message(message.chat.id, limit_txt)
+        else:
+            increment_use(user_id)
+            send_success_report(message.chat.id, uid, region, api_data, execution_type)
     else:
-        try: bot.delete_message(message.chat.id, processing_msg_id)
-        except: pass
-        
-        # Requirement matched: Clear simple clean error message response block
+        # Simple clean connection error response 
         error_txt = (
             f"❌ API SERVER ERROR\n\n"
             f"API connection timed out ya server down ho gaya hai.\n"
-            f"Pls thodi der baad dobara re-attempt karein ya matrix options se live servers check karein."
+            f"Pls thodi der baad dobara re-attempt karein."
         )
         bot.send_message(message.chat.id, error_txt)
 
