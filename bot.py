@@ -24,7 +24,7 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 bot = telebot.TeleBot(BOT_TOKEN, threaded=True)
 
-# 🎛️ REAL PRODUCTION API POOL (Node 1 Updated with your real Vercel endpoint)
+# 🎛️ REAL PRODUCTION API POOL (Real Vercel Endpoint Synced)
 API_POOL = {
     "api1": {"status": True, "name": "V1 Premium (IND)", "region": "IND", "url": "https://darki-like.vercel.app/like"},
     "api2": {"status": True, "name": "V2 Fast (IND)", "region": "IND", "url": "https://your-real-api.com/like_ind_v2"},
@@ -36,10 +36,10 @@ API_POOL = {
     "bd3": {"status": True, "name": "BD API 3", "region": "BD", "url": ""}
 }
 
-# 🛠️ ROUTING ROUTERS (Saves which nodes execute on Manual Run vs Daily Cron)
+# 🛠️ ROUTING ROUTERS (Saves active node configs for targeting checks)
 ROUTING_MATRIX = {
-    "runnow_nodes": ["api1", "api2", "api3", "bdapi1", "bdapi2"],  # Manual execution defaults
-    "autolike_nodes": ["api1", "api2", "api3", "bdapi1", "bdapi2"]  # Daily Cron execution defaults
+    "runnow_nodes": ["api1", "api2", "api3", "bdapi1", "bdapi2"],  
+    "autolike_nodes": ["api1", "api2", "api3", "bdapi1", "bdapi2"]  
 }
 
 # ==========================================
@@ -128,13 +128,9 @@ def increment_use(user_id):
         supabase.table('users').update({'likes_used': res.data[0]['likes_used'] + 1}).eq('user_id', int(user_id)).execute()
 
 # ==========================================
-# 🚀 4. RESTRUCTURED REAL API ENGINE
+# 🚀 4. REAL API ENGINE (HIGH STABILITY RUN)
 # ==========================================
 def hit_real_api(uid, region, execution_type="single"):
-    """
-    Finds and executes requests based on the selected matrix array settings.
-    """
-    # Dynamic routing identification
     if execution_type == "runnow":
         allowed_nodes = ROUTING_MATRIX["runnow_nodes"]
     elif execution_type == "autolike":
@@ -397,29 +393,29 @@ def process_button_commands(call):
     
     if not check_force_join(user_id): return
 
-    # --- TERMINAL DYNAMIC PROCESSING LOGS (User Friendly Vibe) ---
+    # --- TERMINAL DYNAMIC PROCESSING LOGS (Hacker Style Premium Vibe) ---
     if action in ["cmd_like_ind", "cmd_like_bd"]:
         region = "IND" if "ind" in action else "BD"
-        msg = bot.send_message(call.message.chat.id, f"📥 *[TERMINAL KEYBOARD ENTRY]:*\nDatabase region linked to `{region}` cluster.\n\n👉 Please type and send the target player account **UID** node:")
+        msg = bot.send_message(call.message.chat.id, f"⚡ **[MAINMAN NETWORK INJECTION]:**\nTarget zone locked onto `{region}` cluster grids.\n\n👉 Send or enter the target player **UID** to route payload stream:")
         bot.register_next_step_handler(msg, process_user_like_input, region)
         
     elif action == "cmd_mylike":
-        bot.send_message(call.message.chat.id, "📊 *[TELEMETRY SCAN RESULT]:*\nYour Autolike Slot Status: `ACTIVE` \n⏳ Secure communication bridges verified completely.")
+        bot.send_message(call.message.chat.id, "📊 **[TELEMETRY SYNC STATUS]:**\nYour active operational database slot: `ONLINE` \n⏳ Encryption protocols and handshake confirmed safely.")
         
     elif action == "cmd_plan":
-        bot.send_message(call.message.chat.id, f"💎 *[SYSTEM ACCESS COMMERCIALS]:*\nContact {OWNER_USERNAME} to exchange keys for unlimited priority multi-routing quotas.")
+        bot.send_message(call.message.chat.id, f"💎 **[NETWORK PRIVILEGE ALLOCATIONS]:**\nContact {OWNER_USERNAME} to exchange license keys for unlimited high-priority multithreaded quotas.")
 
     # --- ADMINISTRATIVE ACTIONS ---
     elif action in ["cmd_auto_ind", "cmd_auto_bd"]:
         region = "IND" if "ind" in action else "BD"
-        msg = bot.send_message(call.message.chat.id, f"📥 *[PIPELINE CONFIG ENTRY]:*\nProvide parameters in this space-separated format ➔ `UID DAYS` (e.g. `665654165 5`) to lock target into `{region}` automatic queue:")
+        msg = bot.send_message(call.message.chat.id, f"📥 **[PIPELINE INTEGRATION CORES]:**\nEnter arguments inside exact configuration schema ➔ `UID DAYS` (e.g. `1575536956 5`) to bind to `{region}` auto loop queue:")
         bot.register_next_step_handler(msg, process_admin_autolike_input, region)
 
     elif action in ["cmd_listind", "cmd_listbd"]:
         region = "IND" if "listind" in action else "BD"
         try:
             res = supabase.table('autolike_list').select('*').eq('region', region).gt('days_left', 0).execute()
-            txt = f"📋 *[ACTIVE REGISTERED {region} PIPELINE]:*\n\n"
+            txt = f"📋 **[ACTIVE REGISTERED {region} PIPELINE]:**\n\n"
             if not res.data: txt += "ℹ️ Matrix tracking queue is currently empty."
             for idx, r in enumerate(res.data, 1): txt += f"`[{idx}]` 🆔 Target: `{r['uid']}` ➔ ⏳ Lifespan: `{r['days_left']} Cycles Remaining`\n"
             bot.send_message(call.message.chat.id, txt, parse_mode="Markdown")
@@ -427,19 +423,19 @@ def process_button_commands(call):
 
     elif action in ["cmd_removeind", "cmd_removebd"]:
         region = "IND" if "removeind" in action else "BD"
-        msg = bot.send_message(call.message.chat.id, f"🗑️ *[WIPE PIPELINE ENTRY]:*\nSend target client **UID** to permanently eliminate its data block from `{region}` automatic allocation cycles:")
+        msg = bot.send_message(call.message.chat.id, f"🗑️ **[WIPE DATA BLOCK POOL]:**\nSend the target player **UID** node to permanently isolate its data stream from `{region}` automated schedules:")
         bot.register_next_step_handler(msg, process_admin_remove_input, region)
 
     elif action in ["cmd_runnowind", "cmd_runnowbd"]:
         region = "IND" if "ind" in action else "BD"
-        bot.send_message(call.message.chat.id, f"🚀 *[MANUAL OVERRIDE SIGNAL]:*\nDeploying instant multi-routing payload to `{region}` pipeline targets right now! Checking Anti-ban movement array layers...")
+        bot.send_message(call.message.chat.id, f"🚀 **[MANUAL OVERRIDE STREAM INJECTED]:**\nDeploying instant multi-routing payload to `{region}` targets right now! Verifying Anti-ban anti-detection safeguards...")
         try:
             res = supabase.table('autolike_list').select('uid').eq('region', region).gt('days_left', 0).execute()
             for record in res.data:
                 threading.Thread(target=process_like_thread, args=(call.message, record['uid'], region, OWNER_ID, "Force-Scheduler", "runnow")).start()
         except Exception as e: print(e)
 
-    # --- ADVANCED ROUTING DESIGN MATRIX CONFIG (User requested Option Set) ---
+    # --- ADVANCED ROUTING DESIGN MATRIX CONFIG ---
     elif action in ["set_matrix_runnow", "set_matrix_auto"]:
         target_matrix = "runnow_nodes" if "runnow" in action else "autolike_nodes"
         markup = types.InlineKeyboardMarkup(row_width=2)
@@ -461,7 +457,6 @@ def process_button_commands(call):
         else:
             ROUTING_MATRIX[target_matrix].append(node_key)
             
-        # Refresh the screen menu layout with updated values
         markup = types.InlineKeyboardMarkup(row_width=2)
         for k, v in API_POOL.items():
             is_active = k in ROUTING_MATRIX[target_matrix]
@@ -492,36 +487,35 @@ def process_button_commands(call):
         node = action.replace("tgl_", "")
         if node in API_POOL:
             API_POOL[node]['status'] = not API_POOL[node]['status']
-            # Re-render keyboard state instantly
             handle_menu_navigation(call)
 
     elif action == "cmd_allapi":
-        msg = bot.send_message(call.message.chat.id, "⚙️ *[GLOBAL SYSTEM OVERRIDE ENTRY]:*\nSend `on` or `off` to massive switch all server endpoints globally:")
+        msg = bot.send_message(call.message.chat.id, "⚙️ **[GLOBAL ROUTER OVERRIDE SHELL]:**\nSend `on` or `off` to massively alter terminal connection frameworks instantly:")
         bot.register_next_step_handler(msg, process_admin_allapi_toggle)
 
     # --- OWNER PRIVILEGES STREAMS ---
     elif action == "cmd_addadmin":
-        msg = bot.send_message(call.message.chat.id, "➕ *[ROOT INJECTION ENTRY]:*\nSend the precise Telegram unique **USER_ID** numerical value to elevate target to administrative shell privileges:")
+        msg = bot.send_message(call.message.chat.id, "➕ **[PRIVILEGE ELEVATION MODULE]:**\nSend the precise numerical Telegram **USER_ID** string to grant secure admin tokens:")
         bot.register_next_step_handler(msg, process_owner_add_admin)
 
     elif action == "cmd_removeadmin":
-        msg = bot.send_message(call.message.chat.id, "🗑️ *[ROOT PURGE ENTRY]:*\nSend the numerical **USER_ID** token to strip and return target profile to standard node rank:")
+        msg = bot.send_message(call.message.chat.id, "🗑️ **[PRIVILEGE REVOCATION MODULE]:**\nSend targeted numerical **USER_ID** parameter to drop administrative access scopes:")
         bot.register_next_step_handler(msg, process_owner_remove_admin)
 
     elif action == "cmd_allowgroup":
-        msg = bot.send_message(call.message.chat.id, "➕ *[WHITELIST SOCKET ENTRY]:*\nSend chat group **ID** block to permit structural interactions inside that chat layer:")
+        msg = bot.send_message(call.message.chat.id, "➕ **[SOCKET GROUP WHITELIST]:**\nSend chat group unique **ID** payload to authorize interactive queries inside that zone:")
         bot.register_next_step_handler(msg, process_owner_allow_group)
 
     elif action == "cmd_removeallow":
-        msg = bot.send_message(call.message.chat.id, "🚫 *[SOCKET ISOLATION ENTRY]:*\nSend targeted group chat **ID** parameter to isolate and revoke system usage privileges:")
+        msg = bot.send_message(call.message.chat.id, "🚫 **[SOCKET GROUP ISOLATION]:**\nSend targeted group unique **ID** to safely strip communication privileges:")
         bot.register_next_step_handler(msg, process_owner_remove_group)
 
     elif action == "cmd_msg":
-        msg = bot.send_message(call.message.chat.id, "📢 *[INTERCOM STREAM ENTRY]:*\nType and send the text message broadcast data to broadcast across all layers:")
+        msg = bot.send_message(call.message.chat.id, "📢 **[BROADCAST MAIN INTERCOM]:**\nType and send the data string package to broadcast notice alert globally across all clusters:")
         bot.register_next_step_handler(msg, process_owner_broadcast)
 
     elif action == "cmd_setlimit":
-        msg = bot.send_message(call.message.chat.id, "🔒 *[METRICS MODIFICATION ENTRY]:*\nEnter maximum daily limit parameters allocations for standard operators:")
+        msg = bot.send_message(call.message.chat.id, "🔒 **[METRICS ALLOCATION CONTROLS]:**\nEnter max daily run parameters allowance structural configurations for regular users:")
         bot.register_next_step_handler(msg, process_owner_set_limit)
 
 # ==========================================
@@ -590,7 +584,8 @@ def process_owner_remove_group(message):
     if not is_owner(message.from_user.id): return
     target = message.text.strip()
     try:
-        supabase.table('allowed_groups').delete().eq('group_id', str(target)}).execute()
+        # FIXED SYNTXT ERROR: Changed closing parenthesis token from '}' to standard ')'
+        supabase.table('allowed_groups').delete().eq('group_id', str(target)).execute()
         bot.reply_to(message, f"🚫 Isolation patch successfully deployed over Group ID: `{target}`.")
     except: bot.reply_to(message, "❌ Schema structure reference mismatch.")
 
@@ -603,16 +598,16 @@ def process_owner_set_limit(message):
     bot.reply_to(message, f"🔒 Allocation tracking limits calibrated safely to DB config files.")
 
 # ==========================================
-# 🔄 9. RUN BRIDGE LOGIC THREADS (Cinematic Prompts Added)
+# 🔄 9. RUN BRIDGE LOGIC THREADS (Cinematic Prompts Implemented)
 # ==========================================
 def process_like_thread(message, uid, region, user_id, user_name, execution_type="single"):
-    # ⚡ NEW CINEMATIC CHALTA HUA LOG VIBE FOR USERS
+    # Premium cinematic interactive logs that run on screen
     processing_txt = (
-        f"⏳ **[INITIALIZING INJECTION BRIDGE]**...\n"
-        f"Target account UID node: `{uid}` ({region}) verified.\n\n"
-        f"📡 `[STEP 1/3]`: Establishing safe proxy socket bridge layers...\n"
-        f"🛡️ `[STEP 2/3]`: Arming active anti-ban movement map bypass simulation sequence...\n"
-        f"⚡ `[STEP 3/3]`: Pushing script allocation package. This will wait for server responses..."
+        f"⏳ **[INITIALIZING PACKETS INJECTION]**...\n"
+        f"Target proxy account UID node: `{uid}` ({region}) validated.\n\n"
+        f"📡 `[STAGE 1/3]`: Opening secure routing proxy bridges...\n"
+        f"🛡️ `[STAGE 2/3]`: Triggering anti-ban simulation gameplay bypass matrix...\n"
+        f"⚡ `[STAGE 3/3]`: Streaming script allocation package. Waiting safely for backend sync..."
     )
     processing_msg = bot.send_message(message.chat.id, processing_txt, parse_mode="Markdown")
     
@@ -625,7 +620,15 @@ def process_like_thread(message, uid, region, user_id, user_name, execution_type
     else:
         try: bot.delete_message(message.chat.id, processing_msg.message_id)
         except: pass
-        bot.send_message(message.chat.id, "❌ *System Gateway Error:* The specified API server connection dropped, timed out, or returned null likes load. Try again later.")
+        
+        # Fixed error prompt response block
+        error_txt = (
+            f"❌ **[SERVER BRIDGE TIMEOUT EXCEPTION]**\n\n"
+            f"The upstream cluster node returned a null payload response or dropped connection.\n"
+            f"🛡️ *Reason:* Network grid congestion or target node verification failed.\n"
+            f"💡 *Action:* Verify if API pool endpoints are live via matrix settings and re-attempt."
+        )
+        bot.send_message(message.chat.id, error_txt, parse_mode="Markdown")
 
 # ==========================================
 # 🌅 10. DAILY AUTOMATION CRON BATCH (04:05 AM)
@@ -635,7 +638,6 @@ def run_morning_autolikes():
     try:
         res = supabase.table('autolike_list').select('*').gt('days_left', 0).execute()
         for user in res.data:
-            # Executes only active mapped nodes for autolikes settings array
             threading.Thread(target=hit_real_api, args=(user['uid'], user['region'], "autolike")).start()
             supabase.table('autolike_list').update({'days_left': user['days_left'] - 1}).eq('uid', user['uid']).execute()
     except Exception as e: print(f"Scheduler Error: {e}")
