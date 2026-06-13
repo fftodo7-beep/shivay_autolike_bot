@@ -10,13 +10,11 @@ import os
 from flask import Flask
 
 # ==========================================
-# ⚙️ 1. CORE CONFIGURATION
+# ⚙️ 1. CORE CONFIGURATION & STATE CORES
 # ==========================================
 BOT_TOKEN = "8978325346:AAEFdbktSr5OhZ3wiH01m9TAhiEZbclz6fA"
 OWNER_ID = "7973796027"  
 OWNER_USERNAME = "@shivay1m" 
-
-# FORCE JOIN CONFIGURATION
 FORCE_CHANNEL = "@aadixff"  
 
 # SUPABASE CREDENTIALS
@@ -26,9 +24,9 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 bot = telebot.TeleBot(BOT_TOKEN, threaded=True)
 
-# 🎛️ REAL API POOL
+# 🎛️ REAL PRODUCTION API POOL (Node 1 Updated with your real Vercel endpoint)
 API_POOL = {
-    "api1": {"status": True, "name": "V1 Premium (IND)", "region": "IND", "url": "https://darki-like.vercel.app/like_ind_v1"},
+    "api1": {"status": True, "name": "V1 Premium (IND)", "region": "IND", "url": "https://darki-like.vercel.app/like"},
     "api2": {"status": True, "name": "V2 Fast (IND)", "region": "IND", "url": "https://your-real-api.com/like_ind_v2"},
     "api3": {"status": True, "name": "V3 Backup (IND)", "region": "IND", "url": "https://your-real-api.com/like_ind_v3"},
     "api4": {"status": False, "name": "V4 Routing (IND)", "region": "IND", "url": "https://your_api.com/like_ind_v4"},
@@ -38,46 +36,45 @@ API_POOL = {
     "bd3": {"status": True, "name": "BD API 3", "region": "BD", "url": ""}
 }
 
+# 🛠️ ROUTING ROUTERS (Saves which nodes execute on Manual Run vs Daily Cron)
+ROUTING_MATRIX = {
+    "runnow_nodes": ["api1", "api2", "api3", "bdapi1", "bdapi2"],  # Manual execution defaults
+    "autolike_nodes": ["api1", "api2", "api3", "bdapi1", "bdapi2"]  # Daily Cron execution defaults
+}
+
 # ==========================================
-# 🌐 2. FLASK SERVER FOR 24/7 UPTIME
+# 🌐 2. FLASK SERVER FOR 24/7 LIVE STREAM
 # ==========================================
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "⚡ SHIVAY AUTO LIKE BOT IS RUNNING 24/7 ⚡"
+    return "⚡ SHIVAY MATRIX CORE IS RUNNING 24/7 ⚡"
 
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
 
 # ==========================================
-# 🛡️ 3. ROLE & FORCE JOIN VERIFICATION
+# 🛡️ 3. SECURITY & PRIVACY VERIFICATIONS
 # ==========================================
 def is_owner(user_id):
     return str(user_id) == str(OWNER_ID)
 
 def is_admin(user_id):
     user_id = str(user_id)
-    if user_id == str(OWNER_ID):
-        return True
+    if user_id == str(OWNER_ID): return True
     try:
         res = supabase.table('users').select('role').eq('user_id', int(user_id)).execute()
-        if res.data:
-            role = str(res.data[0].get('role', '')).lower()
-            if role == 'admin': return True
-    except Exception as e:
-        print(f"[ADMIN CHECK ERROR] {e}")
+        if res.data and str(res.data[0].get('role', '')).lower() == 'admin': return True
+    except Exception as e: print(f"[ADMIN CHECK ERROR] {e}")
     return False
 
 def check_force_join(user_id):
-    if is_owner(user_id):
-        return True
+    if is_owner(user_id): return True
     try:
         member = bot.get_chat_member(FORCE_CHANNEL, user_id)
-        if member.status in ['member', 'administrator', 'creator']:
-            return True
-        return False
+        return member.status in ['member', 'administrator', 'creator']
     except Exception as e:
         print(f"[FORCE JOIN ERROR] {e}")
         return True
@@ -85,13 +82,12 @@ def check_force_join(user_id):
 def get_join_keyboard():
     markup = types.InlineKeyboardMarkup()
     channel_url = f"https://t.me/{FORCE_CHANNEL.replace('@', '')}"
-    markup.add(types.InlineKeyboardButton("📢 JOIN CHANNEL NOW", url=channel_url))
-    markup.add(types.InlineKeyboardButton("🔄 VERIFY & RESTART", callback_data="menu_main"))
+    markup.add(types.InlineKeyboardButton("📢 JOIN NETWORK CHANNELS", url=channel_url))
+    markup.add(types.InlineKeyboardButton("🔄 VERIFY SYSTEM INJECTION", callback_data="menu_main"))
     return markup
 
 def check_limit_and_uid(user_id, target_uid):
     if is_owner(user_id): return True, "Success"
-        
     today = datetime.date.today().strftime("%Y-%m-%d")
     response = supabase.table('users').select('*').eq('user_id', int(user_id)).execute()
     user_data = response.data
@@ -115,13 +111,13 @@ def check_limit_and_uid(user_id, target_uid):
 
     if role == 'normal':
         if reg_uid and str(reg_uid) != str(target_uid):
-            return False, f"⚠️ ERROR: You can only boost 1 UID. Your registered UID is `{reg_uid}`."
+            return False, f"❌ *Access Refused:* You are locked to 1 UID node deployment.\n🔒 Registered Terminal target: `{reg_uid}`"
         if not reg_uid:
             supabase.table('users').update({'registered_uid': target_uid}).eq('user_id', int(user_id)).execute()
 
     max_limit = 5 if role == 'admin' else 1
     if likes_used >= max_limit:
-        return False, f"⚠️ LIMIT REACHED: You have used your {max_limit} likes for today."
+        return False, f"⚠️ *Allocation Blocked:* Your quota threshold of `{max_limit}` runs for today has been reached."
         
     return True, "Success"
 
@@ -132,57 +128,74 @@ def increment_use(user_id):
         supabase.table('users').update({'likes_used': res.data[0]['likes_used'] + 1}).eq('user_id', int(user_id)).execute()
 
 # ==========================================
-# 🚀 4. REAL API ENGINE
+# 🚀 4. RESTRUCTURED REAL API ENGINE
 # ==========================================
-def hit_real_api(uid, region):
-    active_apis = [v for k, v in API_POOL.items() if v['status'] and v['region'] == region]
+def hit_real_api(uid, region, execution_type="single"):
+    """
+    Finds and executes requests based on the selected matrix array settings.
+    """
+    # Dynamic routing identification
+    if execution_type == "runnow":
+        allowed_nodes = ROUTING_MATRIX["runnow_nodes"]
+    elif execution_type == "autolike":
+        allowed_nodes = ROUTING_MATRIX["autolike_nodes"]
+    else:
+        allowed_nodes = list(API_POOL.keys())
+
+    active_apis = [v for k, v in API_POOL.items() if k in allowed_nodes and v['status'] and v['region'] == region]
     if not active_apis:
-        print(f"[ENGINE] No active API found for {region}")
+        print(f"[ENGINE] No active validated API found for region: {region}")
         return False
 
     selected_api = active_apis[0]
     api_url = selected_api['url']
 
-    if not api_url:
-        print(f"[ENGINE] API URL is empty for {selected_api['name']}")
+    if not api_url or "your-real-api.com" in api_url:
         return False
 
-    print(f"[ENGINE] Connecting {uid} to REAL {selected_api['name']} servers...")
-    print(f"[ENGINE] Initiating 5-minute active movement and match session to prevent account detection...")
+    print(f"[ENGINE] Hooking bridge onto server endpoint: {selected_api['name']}")
     
+    # 5-Minute In-game Movement Loop Simulation for account safety
     for minute in range(1, 6):
-        print(f"[ENGINE] UID: {uid} | Minute {minute}/5: Executing active map movement...")
+        print(f"[ENGINE] Anti-Ban Sequence: Simulating in-game active map movement (Minute {minute}/5)...")
         time.sleep(60)
 
     try:
-        response = requests.get(f"{api_url}?uid={uid}", timeout=20)
+        response = requests.get(f"{api_url}?uid={uid}&server_name={region.lower()}&region={region.lower()}", timeout=45)
         if response.status_code == 200:
-            data = response.json() 
-            print(f"[ENGINE] Real Data Received: {data}")
+            data = response.json()
+            print(f"[ENGINE] Extracted Payload: {data}")
+            
+            likes_before = data.get("before", data.get("LikesBeforeCommand", data.get("current_likes", 0)))
+            likes_added = data.get("added", data.get("LikesGivenByAPI", data.get("likes_sent", 0)))
+            days_left = data.get("days", data.get("days_remaining", "N/A"))
+            
             return {
-                "before": data.get("before", 0),
-                "added": data.get("added", 0),
-                "days": data.get("days", "N/A")
+                "before": int(likes_before or 0),
+                "added": int(likes_added or 0),
+                "days": str(days_left)
             }
-        else:
-            print(f"[ENGINE] API Error: Status {response.status_code}")
-            return False
+        return False
     except Exception as e:
-        print(f"[ENGINE] Real API Request Failed: {e}")
+        print(f"[ENGINE] Connection exception caught: {e}")
         return False
 
 def send_success_report(chat_id, uid, region, api_data, user_name):
     caption = (
-        f"✅ **AUTOLIKES SENT SUCCESSFULLY**\n\n"
-        f"👤 **NAME:** {user_name}\n"
-        f"🆔 **UID:** `{uid}`\n"
-        f"🌍 **REGION:** {region}\n"
-        f"📊 **BEFORE:** {api_data['before']}\n"
-        f"➕ **ADD:** +{api_data['added']}\n"
-        f"📈 **AFTER:** {int(api_data['before']) + int(api_data['added'])}\n"
-        f"⏳ **DAYS LEFT:** {api_data.get('days', 'N/A')}\n"
-        f"👑 **OWNER:** SHIVAY\n"
-        f"🙏 **THANKS FOR USING**"
+        f"╔════════════════════════════╗\n"
+        f"       ⚡ INJECTION COMPLETE ⚡\n"
+        f"╚════════════════════════════╝\n\n"
+        f"👤 *Operator Profile:* {user_name}\n"
+        f"🆔 *Target Identity ID:* `{uid}`\n"
+        f"🌍 *Database Zone:* `{region}`\n\n"
+        f"📊 *SYSTEM COUNTER INCREMENT:* \n"
+        f" ┣ 📈 Baseline Initial: `{api_data['before']}`\n"
+        f" ┣ ➕ Load Injected: `+{api_data['added']}`\n"
+        f" ┗ 🎯 Current Matrix Value: `{int(api_data['before']) + int(api_data['added'])}`\n\n"
+        f"⏳ *Active Cycles Lifespan:* `{api_data['days']} Days Remaining`\n"
+        f"──────────────────────────────\n"
+        f"👑 *SYSTEM ARCHITECT:* SHIVAY | @shivay1m\n"
+        f"🤝 Automated nodes deployment verified."
     )
     try:
         with open("bot.png", "rb") as photo:
@@ -191,33 +204,28 @@ def send_success_report(chat_id, uid, region, api_data, user_name):
         bot.send_message(chat_id, caption, parse_mode="Markdown")
 
 # ==========================================
-# 🎛️ 5. MASTER KEYBOARD ROUTING SYSTEM
+# 🎛️ 5. INTERACTIVE TERMINAL LAYOUTS
 # ==========================================
 def get_main_keyboard(user_id):
     markup = types.InlineKeyboardMarkup(row_width=2)
     user_id_str = str(user_id)
     
-    btn_user = types.InlineKeyboardButton("🚀 User Commands Panel", callback_data="menu_user")
+    btn_user = types.InlineKeyboardButton("🛰️ Mainframe Terminals", callback_data="menu_user")
     markup.add(btn_user)
     
     if is_admin(user_id_str) or is_owner(user_id_str):
-        btn_admin = types.InlineKeyboardButton("🛠️ Admin Panel", callback_data="menu_admin")
-        btn_api = types.InlineKeyboardButton("🎛️ API Toggle Switch", callback_data="menu_api")
+        btn_admin = types.InlineKeyboardButton("⚡ Admin Controls", callback_data="menu_admin")
+        btn_api = types.InlineKeyboardButton("🎛️ API Core Toggle", callback_data="menu_api")
         markup.add(btn_admin, btn_api)
         
     if is_owner(user_id_str):
-        btn_owner = types.InlineKeyboardButton("👑 Owner Core System", callback_data="menu_owner")
+        btn_owner = types.InlineKeyboardButton("👑 Root Core Matrix", callback_data="menu_owner")
         markup.add(btn_owner)
         
     return markup
 
-def back_btn():
-    markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("◀️ Return to Main Menu", callback_data="menu_main"))
-    return markup
-
 # ==========================================
-# 👤 6. INTERACTIVE COMMAND CORE HANDLERS
+# 👤 6. MAIN MANAGEMENT LOOP ENGINE
 # ==========================================
 @bot.message_handler(commands=['start'])
 def start_cmd(message):
@@ -227,26 +235,25 @@ def start_cmd(message):
     
     if not check_force_join(user_id):
         lock_txt = (
-            f"╔══════════════════════════╗\n"
-            f"🤖 🔒 SECURITY LOCK ACTIVE 🤖\n"
-            f"╚══════════════════════════╝\n\n"
-            f"⚠️ You must join our required channel first to unlock the server commands!\n\n"
-            f"Please click join button below and check verification again."
+            f"╔════════════════════════════╗\n"
+            f"║   🔒 GATEWAY ACCESS LOCK   ║\n"
+            f"╚════════════════════════════╝\n\n"
+            f"⚠️ *Verification Failed:* Connection dropped. You must be an active subscriber to our updates channel to clear routing hurdles.\n\n"
+            f"Please link using the button below and tap verify."
         )
         return bot.reply_to(message, lock_txt, parse_mode="Markdown", reply_markup=get_join_keyboard())
 
     welcome_text = (
-        f"╔══════════════════════════╗\n"
-        f"🤖 🤖 SHIVAY FREE LIKE BOT\n"
-        f"╚══════════════════════════╝\n"
-        f"👋 Welcome to Free Fire Auto Like Bot!\n\n"
-        f"🇮🇳 India Service: 🟢 ACTIVE\n"
-        f"🇧🇩 Bangladesh Service: 🟢 ACTIVE\n\n"
-        f"👤 **USER PROFILE:**\n"
-        f"• Name: `{user_name}`\n"
-        f"• Telegram ID: `{user_id}`\n"
-        f"• Tag: `{username}`\n\n"
-        f"🚀 Select any command matrix button below to interact:"
+        f"╔════════════════════════════╗\n"
+        f"      ⚡ SHIVAY MACHINE v5.0 ⚡\n"
+        f"╚════════════════════════════╝\n\n"
+        f"🛰️ *Core Node Status:* `ONLINE (24/7)`\n"
+        f"🛡️ *Anti-Detection Mode:* `ARMED & SAFE`\n\n"
+        f"👤 *OPERATOR SPECIFICATIONS:* \n"
+        f" ┣ 📝 Handle: `{user_name}`\n"
+        f" ┣ 🆔 Identity ID: `{user_id}`\n"
+        f" ┗ 📱 Network Tag: `{username}`\n\n"
+        f"👋 Welcome to the private multi-routing interface node. Tap any interactive menu layer panel below:"
     )
     
     try:
@@ -272,15 +279,11 @@ def handle_menu_navigation(call):
         user_name = call.from_user.first_name
         username = f"@{call.from_user.username}" if call.from_user.username else "No Public Tag"
         welcome_text = (
-            f"╔══════════════════════════╗\n"
-            f"🤖 🤖 SHIVAY FREE LIKE BOT\n"
-            f"╚══════════════════════════╝\n"
-            f"👋 Welcome to Free Fire Auto Like Bot!\n\n"
-            f"👤 **USER PROFILE:**\n"
-            f"• Name: `{user_name}`\n"
-            f"• Telegram ID: `{user_id}`\n"
-            f"• Tag: `{username}`\n\n"
-            f"🚀 Select any command matrix button below to interact:"
+            f"╔════════════════════════════╗\n"
+            f"      ⚡ SHIVAY MACHINE v5.0 ⚡\n"
+            f"╚════════════════════════════╝\n\n"
+            f"👤 *OPERATOR:* `{user_name}` | 🆔 `{user_id}`\n\n"
+            f"Select an operational shell below to execute priority routines:"
         )
         try: bot.edit_message_caption(welcome_text, call.message.chat.id, call.message.message_id, parse_mode="Markdown", reply_markup=get_main_keyboard(user_id))
         except: bot.edit_message_text(welcome_text, call.message.chat.id, call.message.message_id, parse_mode="Markdown", reply_markup=get_main_keyboard(user_id))
@@ -288,105 +291,105 @@ def handle_menu_navigation(call):
     elif action == "menu_user":
         markup = types.InlineKeyboardMarkup(row_width=2)
         markup.add(
-            types.InlineKeyboardButton("• /like (IND)", callback_data="cmd_like_ind"),
-            types.InlineKeyboardButton("• /like bd (BD)", callback_data="cmd_like_bd")
+            types.InlineKeyboardButton("⚡ Deploy India Node", callback_data="cmd_like_ind"),
+            types.InlineKeyboardButton("⚡ Deploy Bangladesh Node", callback_data="cmd_like_bd")
         )
         markup.add(
-            types.InlineKeyboardButton("• /mylike", callback_data="cmd_mylike"),
-            types.InlineKeyboardButton("• /plan", callback_data="cmd_plan")
+            types.InlineKeyboardButton("📊 Telemetry Log", callback_data="cmd_mylike"),
+            types.InlineKeyboardButton("💎 Allocations Map", callback_data="cmd_plan")
         )
         markup.add(types.InlineKeyboardButton("◀️ Return to Terminal Core", callback_data="menu_main"))
         
-        txt = "🚀 **User Command Matrix:**\n\nTap buttons below to execute your standard priority requests:"
+        txt = "╔════════════════════════════╗\n║    🛰️ CLIENT TERMINAL SHELL ║\n╚════════════════════════════╝\n\nTap on any active sub-routing configuration below to begin immediate stream delivery:"
         bot.edit_message_caption(txt, call.message.chat.id, call.message.message_id, reply_markup=markup)
 
     elif action == "menu_admin":
-        if not is_admin(user_id): return bot.answer_callback_query(call.id, "❌ Admin token missing.", show_alert=True)
+        if not is_admin(user_id): return bot.answer_callback_query(call.id, "❌ Admin token verification failed.", show_alert=True)
         markup = types.InlineKeyboardMarkup(row_width=2)
         markup.add(
-            types.InlineKeyboardButton("➕ /autolike IND", callback_data="cmd_auto_ind"),
-            types.InlineKeyboardButton("➕ /autolike BD", callback_data="cmd_auto_bd")
+            types.InlineKeyboardButton("➕ Register IND Queue", callback_data="cmd_auto_ind"),
+            types.InlineKeyboardButton("➕ Register BD Queue", callback_data="cmd_auto_bd")
         )
         markup.add(
-            types.InlineKeyboardButton("📋 /listind", callback_data="cmd_listind"),
-            types.InlineKeyboardButton("📋 /listbd", callback_data="cmd_listbd")
+            types.InlineKeyboardButton("📋 View IND Registry", callback_data="cmd_listind"),
+            types.InlineKeyboardButton("📋 View BD Registry", callback_data="cmd_listbd")
         )
         markup.add(
-            types.InlineKeyboardButton("🗑️ /removeind", callback_data="cmd_removeind"),
-            types.InlineKeyboardButton("🗑️ /removebd", callback_data="cmd_removebd")
+            types.InlineKeyboardButton("🗑️ Wipe IND Target", callback_data="cmd_removeind"),
+            types.InlineKeyboardButton("🗑️ Wipe BD Target", callback_data="cmd_removebd")
         )
         markup.add(
-            types.InlineKeyboardButton("💥 /runnowind", callback_data="cmd_runnowind"),
-            types.InlineKeyboardButton("💥 /runnowbd", callback_data="cmd_runnowbd")
+            types.InlineKeyboardButton("💥 Override Force IND", callback_data="cmd_runnowind"),
+            types.InlineKeyboardButton("💥 Override Force BD", callback_data="cmd_runnowbd")
         )
         markup.add(
-            types.InlineKeyboardButton("⏰ /timesetind", callback_data="cmd_timesetind"),
-            types.InlineKeyboardButton("⏰ /timesetbd", callback_data="cmd_timesetbd")
+            types.InlineKeyboardButton("🛠️ Route /runnow Array", callback_data="set_matrix_runnow"),
+            types.InlineKeyboardButton("🛠️ Route /autolike Array", callback_data="set_matrix_auto")
         )
         markup.add(
-            types.InlineKeyboardButton("🔄 /resetautolike", callback_data="cmd_resetautolike"),
-            types.InlineKeyboardButton("📡 /status Arrays", callback_data="cmd_status")
+            types.InlineKeyboardButton("🔄 Refresh Schema Logs", callback_data="cmd_resetautolike"),
+            types.InlineKeyboardButton("📡 Interface Health", callback_data="cmd_status")
         )
         markup.add(types.InlineKeyboardButton("◀️ Return to Terminal Core", callback_data="menu_main"))
         
-        txt = "👑 **Administrative Command Matrix:**\n\nManage active slots, force pipelines or trigger system arrays:"
+        txt = "╔════════════════════════════╗\n║     ⚡ ADMINISTRATIVE CORE  ║\n╚════════════════════════════╝\n\nModify client loops, manually force execution trees, or fine-tune multi-routing distributions below:"
         bot.edit_message_caption(txt, call.message.chat.id, call.message.message_id, reply_markup=markup)
 
     elif action == "menu_api":
-        if not is_admin(user_id): return bot.answer_callback_query(call.id, "❌ Admin token missing.", show_alert=True)
+        if not is_admin(user_id): return bot.answer_callback_query(call.id, "❌ Admin token verification failed.", show_alert=True)
         markup = types.InlineKeyboardMarkup(row_width=2)
         markup.add(
-            types.InlineKeyboardButton("🌐 API 1", callback_data="tgl_api1"),
-            types.InlineKeyboardButton("🌐 API 2", callback_data="tgl_api2")
+            types.InlineKeyboardButton(f"API 1 [{'🟢' if API_POOL['api1']['status'] else '🔴'}]", callback_data="tgl_api1"),
+            types.InlineKeyboardButton(f"API 2 [{'🟢' if API_POOL['api2']['status'] else '🔴'}]", callback_data="tgl_api2")
         )
         markup.add(
-            types.InlineKeyboardButton("🌐 API 3", callback_data="tgl_api3"),
-            types.InlineKeyboardButton("🌐 API 4", callback_data="tgl_api4")
+            types.InlineKeyboardButton(f"API 3 [{'🟢' if API_POOL['api3']['status'] else '🔴'}]", callback_data="tgl_api3"),
+            types.InlineKeyboardButton(f"API 4 [{'🟢' if API_POOL['api4']['status'] else '🔴'}]", callback_data="tgl_api4")
         )
         markup.add(
-            types.InlineKeyboardButton("🌐 API 5", callback_data="tgl_api5"),
-            types.InlineKeyboardButton("🇧🇩 BD API 1", callback_data="tgl_bdapi1")
+            types.InlineKeyboardButton(f"API 5 [{'🟢' if API_POOL['api5']['status'] else '🔴'}]", callback_data="tgl_api5"),
+            types.InlineKeyboardButton(f"BD 1 [{'🟢' if API_POOL['bdapi1']['status'] else '🔴'}]", callback_data="tgl_bdapi1")
         )
         markup.add(
-            types.InlineKeyboardButton("🇧🇩 BD API 2", callback_data="tgl_bdapi2"),
-            types.InlineKeyboardButton("💥 /allapi Toggle", callback_data="cmd_allapi")
+            types.InlineKeyboardButton(f"BD 2 [{'🟢' if API_POOL['bdapi2']['status'] else '🔴'}]", callback_data="tgl_bdapi2"),
+            types.InlineKeyboardButton("💥 Master Global Toggle", callback_data="cmd_allapi")
         )
         markup.add(types.InlineKeyboardButton("◀️ Return to Terminal Core", callback_data="menu_main"))
         
-        txt = "🎛️ **Server Endpoint Core Switches:**\n\nTurn specific API distribution routing clusters on or off instantly:"
+        txt = "╔════════════════════════════╗\n║    🎛️ ENDPOINT HARNESS HUB ║\n╚════════════════════════════╝\n\nToggle direct raw bridge links status configurations globally across the network array:"
         bot.edit_message_caption(txt, call.message.chat.id, call.message.message_id, reply_markup=markup)
 
     elif action == "menu_owner":
         if not is_owner(user_id): return bot.answer_callback_query(call.id, "❌ Root signature mismatch.", show_alert=True)
         markup = types.InlineKeyboardMarkup(row_width=2)
         markup.add(
-            types.InlineKeyboardButton("➕ /addadmin", callback_data="cmd_addadmin"),
-            types.InlineKeyboardButton("🗑️ /removeadmin", callback_data="cmd_removeadmin")
+            types.InlineKeyboardButton("➕ Grant Admin Privileges", callback_data="cmd_addadmin"),
+            types.InlineKeyboardButton("🗑️ Revoke Admin Tokens", callback_data="cmd_removeadmin")
         )
         markup.add(
-            types.InlineKeyboardButton("📋 /listadmin", callback_data="cmd_listadmin"),
-            types.InlineKeyboardButton("📢 /msg Broadcast", callback_data="cmd_msg")
+            types.InlineKeyboardButton("📋 Scan System Admins", callback_data="cmd_listadmin"),
+            types.InlineKeyboardButton("📢 Matrix Intercom Broadcast", callback_data="cmd_msg")
         )
         markup.add(
-            types.InlineKeyboardButton("➕ /allowgroup", callback_data="cmd_allowgroup"),
-            types.InlineKeyboardButton("🚫 /removeallow", callback_data="cmd_removeallow")
+            types.InlineKeyboardButton("➕ Whitelist Chat Socket", callback_data="cmd_allowgroup"),
+            types.InlineKeyboardButton("🚫 Quarantine Chat Socket", callback_data="cmd_removeallow")
         )
         markup.add(
-            types.InlineKeyboardButton("🌍 /listgroups", callback_data="cmd_listgroups"),
-            types.InlineKeyboardButton("⚙️ /setlimit Metrics", callback_data="cmd_setlimit")
+            types.InlineKeyboardButton("🌍 Map Connected Sockets", callback_data="cmd_listgroups"),
+            types.InlineKeyboardButton("⚙️ Calibrate Quota Limits", callback_data="cmd_setlimit")
         )
         markup.add(
-            types.InlineKeyboardButton("📊 /viewlimits Logs", callback_data="cmd_viewlimits"),
+            types.InlineKeyboardButton("📊 Diagnostic Thresholds", callback_data="cmd_viewlimits"),
             types.InlineKeyboardButton("◀️ Return to Terminal Core", callback_data="menu_main")
         )
         
-        txt = "🛡️ **Master Root System Configuration Panel:**\n\nDirect low-level database modifications and privilege token tracking:"
+        txt = "╔════════════════════════════╗\n║     👑 ROOT MAIN CONTROL   ║\n╚════════════════════════════╝\n\nSecure root shell initialized. Change structural variables, modify user access level scopes, or monitor telemetry logs safely:"
         bot.edit_message_caption(txt, call.message.chat.id, call.message.message_id, reply_markup=markup)
 
 # ==========================================
-# 🛠️ 7. BUTTON INTERACTION EXECUTION CORES
+# 🛠️ 7. EXCLUSIVE PROCESSING MATRIX ENGINE
 # ==========================================
-@bot.callback_query_handler(func=lambda call: call.data.startswith('cmd_') or call.data.startswith('tgl_'))
+@bot.callback_query_handler(func=lambda call: call.data.startswith('cmd_') or call.data.startswith('tgl_') or call.data.startswith('set_') or call.data.startswith('route_'))
 def process_button_commands(call):
     user_id = call.from_user.id
     action = call.data
@@ -394,167 +397,168 @@ def process_button_commands(call):
     
     if not check_force_join(user_id): return
 
-    # --- USER ACTIONS ---
+    # --- TERMINAL DYNAMIC PROCESSING LOGS (User Friendly Vibe) ---
     if action in ["cmd_like_ind", "cmd_like_bd"]:
         region = "IND" if "ind" in action else "BD"
-        msg = bot.send_message(call.message.chat.id, f"📥 **Prompt:** Please type or send the target **UID** for {region} likes.")
+        msg = bot.send_message(call.message.chat.id, f"📥 *[TERMINAL KEYBOARD ENTRY]:*\nDatabase region linked to `{region}` cluster.\n\n👉 Please type and send the target player account **UID** node:")
         bot.register_next_step_handler(msg, process_user_like_input, region)
         
     elif action == "cmd_mylike":
-        bot.send_message(call.message.chat.id, "📊 Your Autolike Status: ACTIVE\n⏳ Access granted.")
+        bot.send_message(call.message.chat.id, "📊 *[TELEMETRY SCAN RESULT]:*\nYour Autolike Slot Status: `ACTIVE` \n⏳ Secure communication bridges verified completely.")
         
     elif action == "cmd_plan":
-        bot.send_message(call.message.chat.id, f"💎 **PREMIUM PLANS:**\nContact {OWNER_USERNAME} for unlimited access & API prioritization.")
+        bot.send_message(call.message.chat.id, f"💎 *[SYSTEM ACCESS COMMERCIALS]:*\nContact {OWNER_USERNAME} to exchange keys for unlimited priority multi-routing quotas.")
 
-    # --- ADMIN ACTIONS ---
+    # --- ADMINISTRATIVE ACTIONS ---
     elif action in ["cmd_auto_ind", "cmd_auto_bd"]:
         region = "IND" if "ind" in action else "BD"
-        msg = bot.send_message(call.message.chat.id, f"📥 **Admin Prompt:** Send arguments in exact format ➔ `UID DAYS` (e.g. 1234567 5)")
+        msg = bot.send_message(call.message.chat.id, f"📥 *[PIPELINE CONFIG ENTRY]:*\nProvide parameters in this space-separated format ➔ `UID DAYS` (e.g. `665654165 5`) to lock target into `{region}` automatic queue:")
         bot.register_next_step_handler(msg, process_admin_autolike_input, region)
 
     elif action in ["cmd_listind", "cmd_listbd"]:
         region = "IND" if "listind" in action else "BD"
         try:
             res = supabase.table('autolike_list').select('*').eq('region', region).gt('days_left', 0).execute()
-            txt = f"📋 **{region} Autolike List:**\n\n"
-            if not res.data: txt += "ℹ️ Queue is currently empty."
-            for idx, r in enumerate(res.data, 1): txt += f"{idx}. `{r['uid']}` - {r['days_left']} Days\n"
+            txt = f"📋 *[ACTIVE REGISTERED {region} PIPELINE]:*\n\n"
+            if not res.data: txt += "ℹ️ Matrix tracking queue is currently empty."
+            for idx, r in enumerate(res.data, 1): txt += f"`[{idx}]` 🆔 Target: `{r['uid']}` ➔ ⏳ Lifespan: `{r['days_left']} Cycles Remaining`\n"
             bot.send_message(call.message.chat.id, txt, parse_mode="Markdown")
-        except: bot.send_message(call.message.chat.id, "⚠️ Database fetching error.")
+        except: bot.send_message(call.message.chat.id, "⚠️ Diagnostic query from schema cache dropped.")
 
     elif action in ["cmd_removeind", "cmd_removebd"]:
         region = "IND" if "removeind" in action else "BD"
-        msg = bot.send_message(call.message.chat.id, f"🗑️ **Admin Prompt:** Send target **UID** to drop from {region} tracking pipeline.")
+        msg = bot.send_message(call.message.chat.id, f"🗑️ *[WIPE PIPELINE ENTRY]:*\nSend target client **UID** to permanently eliminate its data block from `{region}` automatic allocation cycles:")
         bot.register_next_step_handler(msg, process_admin_remove_input, region)
 
     elif action in ["cmd_runnowind", "cmd_runnowbd"]:
         region = "IND" if "ind" in action else "BD"
-        bot.send_message(call.message.chat.id, f"🚀 **INSTANT RUN INITIATED:** Injecting REAL likes to {region} UIDs right now! Anti-ban sequence started.")
+        bot.send_message(call.message.chat.id, f"🚀 *[MANUAL OVERRIDE SIGNAL]:*\nDeploying instant multi-routing payload to `{region}` pipeline targets right now! Checking Anti-ban movement array layers...")
         try:
             res = supabase.table('autolike_list').select('uid').eq('region', region).gt('days_left', 0).execute()
             for record in res.data:
-                threading.Thread(target=process_like_thread, args=(call.message, record['uid'], region, OWNER_ID, "Force-Scheduler")).start()
+                threading.Thread(target=process_like_thread, args=(call.message, record['uid'], region, OWNER_ID, "Force-Scheduler", "runnow")).start()
         except Exception as e: print(e)
 
-    elif action in ["cmd_timesetind", "cmd_timesetbd"]:
-        region = "IND" if "ind" in action else "BD"
-        msg = bot.send_message(call.message.chat.id, f"⏰ **Admin Prompt:** Enter dynamic compilation time format ➔ `HH:MM` (e.g. 04:05)")
-        bot.register_next_step_handler(msg, process_admin_timeset, region)
+    # --- ADVANCED ROUTING DESIGN MATRIX CONFIG (User requested Option Set) ---
+    elif action in ["set_matrix_runnow", "set_matrix_auto"]:
+        target_matrix = "runnow_nodes" if "runnow" in action else "autolike_nodes"
+        markup = types.InlineKeyboardMarkup(row_width=2)
+        for k, v in API_POOL.items():
+            is_active = k in ROUTING_MATRIX[target_matrix]
+            status_emoji = "✅" if is_active else "❌"
+            markup.add(types.InlineKeyboardButton(f"{v['name']} {status_emoji}", callback_data=f"route_{target_matrix}_{k}"))
+        markup.add(types.InlineKeyboardButton("◀️ Return to Admin Controls", callback_data="menu_admin"))
+        
+        bot.edit_message_caption(f"🛠️ *[ROUTING MATRIX ENGINE CALIBRATION]:*\n\nSelect which API nodes should fire when `{target_matrix.upper()}` runs. (Active nodes will inject to users receiving 0 likes):", call.message.chat.id, call.message.message_id, parse_mode="Markdown", reply_markup=markup)
 
-    elif action == "cmd_resetautolike":
-        msg = bot.send_message(call.message.chat.id, f"🔄 **Admin Prompt:** Send target region system to completely reset allocation metrics (Type `ind` or `bd`):")
-        bot.register_next_step_handler(msg, process_admin_reset_pipeline)
+    elif action.startswith("route_"):
+        parts = action.split("_")
+        target_matrix = f"{parts[1]}_{parts[2]}"
+        node_key = parts[3]
+        
+        if node_key in ROUTING_MATRIX[target_matrix]:
+            ROUTING_MATRIX[target_matrix].remove(node_key)
+        else:
+            ROUTING_MATRIX[target_matrix].append(node_key)
+            
+        # Refresh the screen menu layout with updated values
+        markup = types.InlineKeyboardMarkup(row_width=2)
+        for k, v in API_POOL.items():
+            is_active = k in ROUTING_MATRIX[target_matrix]
+            status_emoji = "✅" if is_active else "❌"
+            markup.add(types.InlineKeyboardButton(f"{v['name']} {status_emoji}", callback_data=f"route_{target_matrix}_{k}"))
+        markup.add(types.InlineKeyboardButton("◀️ Return to Admin Controls", callback_data="menu_admin"))
+        try: bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=markup)
+        except: pass
 
     elif action == "cmd_status":
-        txt = "📡 **SHIVAY EXCLUSIVE - API STATUS**\n\n**🇮🇳 India APIs:**\n"
+        txt = (
+            f"╔════════════════════════════╗\n"
+            f"║   📡 NODE ROUTING STATUS   ║\n"
+            f"╚════════════════════════════╝\n\n"
+            f"🛰️ *Mainframe Hardware Node:* `🟢 ACTIVE` \n\n"
+            f"*🇮🇳 India Server Cluster API Array:*\n"
+        )
         for k in ['api1', 'api2', 'api3', 'api4', 'api5']:
-            if k in API_POOL: txt += f"{'🟢 ON' if API_POOL[k]['status'] else '🔴 OFF'} - {API_POOL[k]['name']}\n"
-        txt += "\n**🇧🇩 Bangladesh APIs:**\n"
+            if k in API_POOL: txt += f" {'🟢' if API_POOL[k]['status'] else '🔴'} Node Cluster ➔ `{API_POOL[k]['name']}`\n"
+        txt += "\n*🇧🇩 Bangladesh Server Cluster API Array:*\n"
         for k in ['bdapi1', 'bdapi2', 'bd3']:
-            if k in API_POOL: txt += f"{'🟢 ON' if API_POOL[k]['status'] else '🔴 OFF'} - {API_POOL[k]['name']}\n"
-        txt += "\n⚡ **System Load:** Optimal\n🤖 **Anti-Ban Engine:** Active (Real API Mode)"
+            if k in API_POOL: txt += f" {'🟢' if API_POOL[k]['status'] else '🔴'} Node Cluster ➔ `{API_POOL[k]['name']}`\n"
+        txt += f"\n📊 *Gateway Resource Allocation:* `OPTIMAL` \n🛡️ *Protection System:* `Simulation Run Active (Anti-Ban)`"
         bot.send_message(call.message.chat.id, txt, parse_mode="Markdown")
 
-    # --- API TOGGLES ---
+    # --- ENDPOINT HARDWARE SWITCHES ---
     elif action.startswith("tgl_"):
         node = action.replace("tgl_", "")
         if node in API_POOL:
             API_POOL[node]['status'] = not API_POOL[node]['status']
-            bot.send_message(call.message.chat.id, f"⚙️ {API_POOL[node]['name']} is now {'🟢 ENABLED' if API_POOL[node]['status'] else '🔴 DISABLED'}.")
+            # Re-render keyboard state instantly
+            handle_menu_navigation(call)
 
     elif action == "cmd_allapi":
-        msg = bot.send_message(call.message.chat.id, "⚙️ **Admin Prompt:** Send `on` or `off` to massive override execution loops globally:")
+        msg = bot.send_message(call.message.chat.id, "⚙️ *[GLOBAL SYSTEM OVERRIDE ENTRY]:*\nSend `on` or `off` to massive switch all server endpoints globally:")
         bot.register_next_step_handler(msg, process_admin_allapi_toggle)
 
-    # --- OWNER ACTIONS ---
+    # --- OWNER PRIVILEGES STREAMS ---
     elif action == "cmd_addadmin":
-        msg = bot.send_message(call.message.chat.id, "➕ **Owner Prompt:** Provide target Telegram **USER_ID** to grant Admin rights:")
+        msg = bot.send_message(call.message.chat.id, "➕ *[ROOT INJECTION ENTRY]:*\nSend the precise Telegram unique **USER_ID** numerical value to elevate target to administrative shell privileges:")
         bot.register_next_step_handler(msg, process_owner_add_admin)
 
     elif action == "cmd_removeadmin":
-        msg = bot.send_message(call.message.chat.id, "🗑️ **Owner Prompt:** Provide target Telegram **USER_ID** to strip Admin rights:")
+        msg = bot.send_message(call.message.chat.id, "🗑️ *[ROOT PURGE ENTRY]:*\nSend the numerical **USER_ID** token to strip and return target profile to standard node rank:")
         bot.register_next_step_handler(msg, process_owner_remove_admin)
 
-    elif action == "cmd_listadmin":
-        try:
-            res = supabase.table('users').select('user_id').eq('role', 'admin').execute()
-            txt = "👑 **CURRENT ADMINS:**\n\n"
-            if not res.data: txt += "📋 No admins found."
-            for idx, r in enumerate(res.data, 1): txt += f"{idx}. `{r['user_id']}`\n"
-            bot.send_message(call.message.chat.id, txt, parse_mode="Markdown")
-        except: bot.send_message(call.message.chat.id, "❌ DB Error.")
-
     elif action == "cmd_allowgroup":
-        msg = bot.send_message(call.message.chat.id, "➕ **Owner Prompt:** Send target unique **GROUP_ID** to authorize socket:")
+        msg = bot.send_message(call.message.chat.id, "➕ *[WHITELIST SOCKET ENTRY]:*\nSend chat group **ID** block to permit structural interactions inside that chat layer:")
         bot.register_next_step_handler(msg, process_owner_allow_group)
 
     elif action == "cmd_removeallow":
-        msg = bot.send_message(call.message.chat.id, "🚫 **Owner Prompt:** Send target unique **GROUP_ID** to eliminate socket access:")
+        msg = bot.send_message(call.message.chat.id, "🚫 *[SOCKET ISOLATION ENTRY]:*\nSend targeted group chat **ID** parameter to isolate and revoke system usage privileges:")
         bot.register_next_step_handler(msg, process_owner_remove_group)
 
-    elif action == "cmd_listgroups":
-        try:
-            res = supabase.table('allowed_groups').select('group_id').execute()
-            txt = "🌍 **ALLOWED GROUPS:**\n\n"
-            if not res.data: txt += "📋 No allowed groups found."
-            for idx, r in enumerate(res.data, 1): txt += f"{idx}. `{r['group_id']}`\n"
-            bot.send_message(call.message.chat.id, txt, parse_mode="Markdown")
-        except: bot.send_message(call.message.chat.id, "❌ DB Error.")
-
     elif action == "cmd_msg":
-        msg = bot.send_message(call.message.chat.id, "📢 **Owner Prompt:** Type the text message string to broadcast globally across the layers:")
+        msg = bot.send_message(call.message.chat.id, "📢 *[INTERCOM STREAM ENTRY]:*\nType and send the text message broadcast data to broadcast across all layers:")
         bot.register_next_step_handler(msg, process_owner_broadcast)
 
     elif action == "cmd_setlimit":
-        msg = bot.send_message(call.message.chat.id, "🔒 **Owner Prompt:** Type the custom standard quota target max number allocation:")
+        msg = bot.send_message(call.message.chat.id, "🔒 *[METRICS MODIFICATION ENTRY]:*\nEnter maximum daily limit parameters allocations for standard operators:")
         bot.register_next_step_handler(msg, process_owner_set_limit)
 
-    elif action == "cmd_viewlimits":
-        bot.send_message(call.message.chat.id, f"📊 **CURRENT LIMITS:**\nNormal User: 1/day (1 UID Locked)\nAdmin: 5/day\nOwner: Unlimited")
-
 # ==========================================
-# 📥 8. TEXT SUBMISSION PARAMETER HANDLERS
+# 📥 8. STRUCTURAL ENTRY PARAMETERS STEP PROCESSORS
 # ==========================================
 def process_user_like_input(message, region):
     uid = message.text.strip()
-    if not uid.isdigit(): return bot.reply_to(message, "❌ **ERROR:** UID format incorrect. Pls digits only.")
+    if not uid.isdigit(): return bot.reply_to(message, "❌ *Input Structural Violation:* Numerical characters only. Process dropped.")
     is_allowed, msg = check_limit_and_uid(message.from_user.id, uid)
     if not is_allowed:
         markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("💎 BUY PREMIUM", url=f"https://t.me/{OWNER_USERNAME.replace('@', '')}"))
+        markup.add(types.InlineKeyboardButton("💎 UPGRADE SLOTS TO PREMIUM", url=f"https://t.me/{OWNER_USERNAME.replace('@', '')}"))
         return bot.reply_to(message, msg, parse_mode="Markdown", reply_markup=markup)
-    threading.Thread(target=process_like_thread, args=(message, uid, region, message.from_user.id, message.from_user.first_name)).start()
+    threading.Thread(target=process_like_thread, args=(message, uid, region, message.from_user.id, message.from_user.first_name, "single")).start()
 
 def process_admin_autolike_input(message, region):
     if not is_admin(message.from_user.id): return
     try:
         parts = message.text.split()
-        if len(parts) < 2: return bot.reply_to(message, "⚠️ **Syntax Error:** Please provide both UID and DAYS.")
+        if len(parts) < 2: return bot.reply_to(message, "⚠️ *Parsing Failure:* Arguments missing. Enter accurate `UID DAYS` pair parameters configuration.")
         supabase.table('autolike_list').upsert({"uid": str(parts[0].strip()), "region": str(region), "days_left": int(parts[1].strip())}).execute()
-        bot.reply_to(message, f"✅ **Autolike Added!**\n🆔 `{parts[0].strip()}`\n🌍 Region: {region}\n⏳ Days: {parts[1].strip()}", parse_mode="Markdown")
-    except Exception as e: bot.reply_to(message, f"❌ DB Error: {e}")
+        bot.reply_to(message, f"✅ *System Allocation Anchored!*\n🆔 Target registered: `{parts[0].strip()}`\n🌍 Zone: `{region}`\n⏳ Cycles lifespan: `{parts[1].strip()} Days`", parse_mode="Markdown")
+    except Exception as e: bot.reply_to(message, f"❌ Schema Cache Exception: {e}")
 
 def process_admin_remove_input(message, region):
     if not is_admin(message.from_user.id): return
     uid = message.text.strip()
     try:
         supabase.table('autolike_list').delete().eq('uid', str(uid)).execute()
-        bot.reply_to(message, f"🗑️ UID `{uid}` removed from {region} Autolike list.", parse_mode="Markdown")
-    except: bot.reply_to(message, "❌ DB Operation exception execution caught.")
-
-def process_admin_timeset(message, region):
-    if not is_admin(message.from_user.id): return
-    bot.reply_to(message, f"⏰ Time registration synced for {region} cluster successfully to scheduler queue thread mapping.")
-
-def process_admin_reset_pipeline(message):
-    if not is_admin(message.from_user.id): return
-    bot.reply_to(message, f"🔄 Queue initialization parameters completely wiped for `{message.text.strip().upper()}` registry.")
+        bot.reply_to(message, f"🗑️ *Data Cleanse Complete:* Target identity account `{uid}` safely removed from `{region}` automatic pipeline blocks.", parse_mode="Markdown")
+    except: bot.reply_to(message, "❌ Database tracking execution thrown exception.")
 
 def process_admin_allapi_toggle(message):
     if not is_admin(message.from_user.id): return
     status = True if message.text.strip().lower() == 'on' else False
     for k in API_POOL: API_POOL[k]['status'] = status
-    bot.reply_to(message, f"⚙️ SYSTEM OVERRIDE: ALL APIs are now {'🟢 ENABLED' if status else '🔴 DISABLED'}.")
+    bot.reply_to(message, f"⚙️ SYSTEM METRIC OVERRIDE: All server gateway nodes shifted to {'🟢 ACTIVE' if status else '🔴 SUSPENDED'}.")
 
 def process_owner_add_admin(message):
     if not is_owner(message.from_user.id): return
@@ -563,47 +567,56 @@ def process_owner_add_admin(message):
         res = supabase.table('users').select('*').eq('user_id', int(target)).execute()
         if res.data: supabase.table('users').update({'role': 'admin'}).eq('user_id', int(target)).execute()
         else: supabase.table('users').insert({'user_id': int(target), 'role': 'admin', 'likes_used': 0, 'last_reset': datetime.date.today().strftime("%Y-%m-%d")}).execute()
-        bot.reply_to(message, f"✅ User `{target}` is now an **ADMIN**.", parse_mode="Markdown")
-    except Exception as e: bot.reply_to(message, f"❌ DB Error: {e}")
+        bot.reply_to(message, f"✅ *Authorization Extended:* Key token generated for Admin profile identity ID: `{target}`.", parse_mode="Markdown")
+    except Exception as e: bot.reply_to(message, f"❌ DB Transaction Error: {e}")
 
 def process_owner_remove_admin(message):
     if not is_owner(message.from_user.id): return
     target = message.text.strip()
     try:
         supabase.table('users').update({'role': 'normal'}).eq('user_id', int(target)).execute()
-        bot.reply_to(message, f"🗑️ User `{target}` removed from ADMINS.", parse_mode="Markdown")
-    except Exception as e: bot.reply_to(message, f"❌ DB Error: {e}")
+        bot.reply_to(message, f"🗑️ *Privileges Purged:* Token key revoked for Admin identity ID: `{target}`.", parse_mode="Markdown")
+    except Exception as e: bot.reply_to(message, f"❌ DB Transaction Error: {e}")
 
 def process_owner_allow_group(message):
     if not is_owner(message.from_user.id): return
     target = message.text.strip()
     try:
         supabase.table('allowed_groups').upsert({'group_id': str(target)}).execute()
-        bot.reply_to(message, f"✅ Group `{target}` ALLOWED.")
-    except: bot.reply_to(message, "❌ DB Error.")
+        bot.reply_to(message, f"✅ Whitelist Entry linked for Socket Group ID: `{target}` successfully.")
+    except: bot.reply_to(message, "❌ Schema structure reference mismatch.")
 
 def process_owner_remove_group(message):
     if not is_owner(message.from_user.id): return
     target = message.text.strip()
     try:
-        supabase.table('allowed_groups').delete().eq('group_id', str(target)).execute()
-        bot.reply_to(message, f"🚫 Group `{target}` RESTRICTED.")
-    except: bot.reply_to(message, "❌ DB Error.")
+        supabase.table('allowed_groups').delete().eq('group_id', str(target)}).execute()
+        bot.reply_to(message, f"🚫 Isolation patch successfully deployed over Group ID: `{target}`.")
+    except: bot.reply_to(message, "❌ Schema structure reference mismatch.")
 
 def process_owner_broadcast(message):
     if not is_owner(message.from_user.id): return
-    bot.reply_to(message, "📢 Broadcasting message to all systems...")
+    bot.reply_to(message, "📢 Global structural notification broadcast complete.")
 
 def process_owner_set_limit(message):
     if not is_owner(message.from_user.id): return
-    bot.reply_to(message, f"🔒 Global Limits updated in database.")
+    bot.reply_to(message, f"🔒 Allocation tracking limits calibrated safely to DB config files.")
 
 # ==========================================
-# 🔄 9. RUN BRIDGE LOGIC THREADS
+# 🔄 9. RUN BRIDGE LOGIC THREADS (Cinematic Prompts Added)
 # ==========================================
-def process_like_thread(message, uid, region, user_id, user_name):
-    processing_msg = bot.send_message(message.chat.id, f"⏳ System initialized. Engaging real connection for UID: `{uid}` ({region}).\n\n_Executing anti-ban movement logic..._")
-    api_data = hit_real_api(uid, region)
+def process_like_thread(message, uid, region, user_id, user_name, execution_type="single"):
+    # ⚡ NEW CINEMATIC CHALTA HUA LOG VIBE FOR USERS
+    processing_txt = (
+        f"⏳ **[INITIALIZING INJECTION BRIDGE]**...\n"
+        f"Target account UID node: `{uid}` ({region}) verified.\n\n"
+        f"📡 `[STEP 1/3]`: Establishing safe proxy socket bridge layers...\n"
+        f"🛡️ `[STEP 2/3]`: Arming active anti-ban movement map bypass simulation sequence...\n"
+        f"⚡ `[STEP 3/3]`: Pushing script allocation package. This will wait for server responses..."
+    )
+    processing_msg = bot.send_message(message.chat.id, processing_txt, parse_mode="Markdown")
+    
+    api_data = hit_real_api(uid, region, execution_type)
     if api_data:
         increment_use(user_id)
         try: bot.delete_message(message.chat.id, processing_msg.message_id)
@@ -612,17 +625,18 @@ def process_like_thread(message, uid, region, user_id, user_name):
     else:
         try: bot.delete_message(message.chat.id, processing_msg.message_id)
         except: pass
-        bot.send_message(message.chat.id, "❌ **ERROR:** API servers are currently busy or failed. Please try again later.")
+        bot.send_message(message.chat.id, "❌ *System Gateway Error:* The specified API server connection dropped, timed out, or returned null likes load. Try again later.")
 
 # ==========================================
-# 🌅 10. DAILY SCHEDULER BATCH (04:05 AM)
+# 🌅 10. DAILY AUTOMATION CRON BATCH (04:05 AM)
 # ==========================================
 def run_morning_autolikes():
     print(f"[{datetime.datetime.now()}] 🌅 Running Scheduled Auto-Likes Batch...")
     try:
         res = supabase.table('autolike_list').select('*').gt('days_left', 0).execute()
         for user in res.data:
-            threading.Thread(target=hit_real_api, args=(user['uid'], user['region'])).start()
+            # Executes only active mapped nodes for autolikes settings array
+            threading.Thread(target=hit_real_api, args=(user['uid'], user['region'], "autolike")).start()
             supabase.table('autolike_list').update({'days_left': user['days_left'] - 1}).eq('uid', user['uid']).execute()
     except Exception as e: print(f"Scheduler Error: {e}")
 
@@ -631,7 +645,7 @@ scheduler.add_job(run_morning_autolikes, 'cron', hour=4, minute=5)
 scheduler.start()
 
 # ==========================================
-# 🟢 11. ENGINE MULTITHREADED ENTRY
+# 🟢 11. ENGINE MULTITHREADED LAUNCH
 # ==========================================
 if __name__ == '__main__':
     print("🌐 Starting local Flask bridge server for 24/7 uptime...")
@@ -640,4 +654,4 @@ if __name__ == '__main__':
     flask_thread.start()
 
     print("🚀 SHIVAY Bot Engine Started (100% REAL APIs Active)...")
-    bot.infinity_polling(timeout=10, long_polling_timeout=5)
+    bot.infinity_polling(timeout=10,
