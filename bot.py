@@ -654,4 +654,4 @@ if __name__ == '__main__':
     flask_thread.start()
 
     print("🚀 SHIVAY Bot Engine Started (100% REAL APIs Active)...")
-    bot.infinity_polling(timeout=10,
+    bot.infinity_polling(timeout=10, long_polling_timeout=5)
