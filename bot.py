@@ -12,7 +12,7 @@ from flask import Flask
 # ==========================================
 # ⚙️ 1. CORE CONFIGURATION & STATE CORES
 # ==========================================
-BOT_TOKEN = "8978325346:AAEFdbktSr5OhZ3wiH01m9TAhiEZbclz6fA"
+BOT_TOKEN = "8628322039:AAG5WfGSIE4hFlmlVB9VGtN6f2_KR7wj7DE"
 OWNER_ID = "7973796027"    
 OWNER_USERNAME = "@shivay1m" 
 FORCE_CHANNEL = "@aadixff"  
